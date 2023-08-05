@@ -9,7 +9,16 @@ on:
         description: 'Commit hash'
         required: false
   push:
-    branches: ["main"]
+    branches: 
+    - main
+    paths-ignore:
+    - 'docs/**'
+    - '.vscode'
+    - 'images/linux/Ubuntu2204-Readme.md'
+    - 'images/macos/**'
+    - 'images/win/**'
+    - 'images.CI/linux-and-win/azure-pipelines/windows*'
+    - 'images.CI/macos/**'
 
 jobs:
   Ubuntu_2204:
