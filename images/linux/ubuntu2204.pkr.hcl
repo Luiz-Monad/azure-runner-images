@@ -14,9 +14,24 @@ variable "build_resource_group_name" {
   default = "${env("BUILD_RESOURCE_GROUP_NAME")}"
 }
 
-variable "capture_name_prefix" {
+variable "image_gallery" {
   type    = string
-  default = "packer"
+  default = "test"
+}
+
+variable "image_name" {
+  type    = string
+  default = "ubuntu"
+}
+
+variable "image_version" {
+  type    = string
+  default = "0"
+}
+
+variable "image_os" {
+  type    = string
+  default = "ubuntu22"
 }
 
 variable "client_id" {
@@ -58,16 +73,6 @@ variable "helper_script_folder" {
 variable "image_folder" {
   type    = string
   default = "/imagegeneration"
-}
-
-variable "image_os" {
-  type    = string
-  default = "ubuntu22"
-}
-
-variable "image_version" {
-  type    = string
-  default = "dev"
 }
 
 variable "imagedata_file" {
@@ -145,23 +150,33 @@ variable "vm_size" {
   default = "Standard_D4s_v4"
 }
 
+variable "storage_type" {
+  type    = string
+  default = "Standard_LRS"
+}
+
 source "azure-arm" "build_vhd" {
   allowed_inbound_ip_addresses           = "${var.allowed_inbound_ip_addresses}"
   build_resource_group_name              = "${var.build_resource_group_name}"
-  capture_container_name                 = "images"
-  capture_name_prefix                    = "${var.capture_name_prefix}"
+  shared_image_gallery_destination {
+      subscription                       = "${var.subscription_id}"
+      resource_group                     = "${var.resource_group}"
+      gallery_name                       = "${var.image_gallery}"
+      image_name                         = "${var.image_name}"
+      image_version                      = "${var.image_version}"
+      storage_account_type               = "${var.storage_type}"
+  }
   client_id                              = "${var.client_id}"
   client_secret                          = "${var.client_secret}"
   client_cert_path                       = "${var.client_cert_path}"
   image_offer                            = "0001-com-ubuntu-server-jammy"
-  image_publisher                        = "canonical"
+  image_publisher                        = "Canonical"
   image_sku                              = "22_04-lts-gen2"
+  image_version                          = "latest"
   location                               = "${var.location}"
-  os_disk_size_gb                        = "86"
+  os_disk_size_gb                        = "6"
   os_type                                = "Linux"
   private_virtual_network_with_public_ip = "${var.private_virtual_network_with_public_ip}"
-  resource_group_name                    = "${var.resource_group}"
-  storage_account                        = "${var.storage_account}"
   subscription_id                        = "${var.subscription_id}"
   temp_resource_group_name               = "${var.temp_resource_group_name}"
   tenant_id                              = "${var.tenant_id}"

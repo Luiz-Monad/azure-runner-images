@@ -10,7 +10,8 @@ param(
     [String] [Parameter (Mandatory=$true)] $TenantId,
     [String] [Parameter (Mandatory=$false)] $VirtualNetworkName,
     [String] [Parameter (Mandatory=$false)] $VirtualNetworkRG,
-    [String] [Parameter (Mandatory=$false)] $VirtualNetworkSubnet
+    [String] [Parameter (Mandatory=$false)] $VirtualNetworkSubnet,
+    [String] [Parameter (Mandatory=$false)] $SharedImageGallery
 )
 
 if (-not (Test-Path $TemplatePath))
@@ -39,7 +40,9 @@ Write-Host "Show Packer Version"
 packer --version
 
 Write-Host "Build $Image VM"
-packer build    -var "capture_name_prefix=$ResourcesNamePrefix" `
+packer build    -var "image_gallery=$SharedImageGallery" `
+                -var "image_name=$Image" `
+                -var "image_version=$ResourcesNamePrefix" `
                 -var "client_id=$ClientId" `
                 -var "client_secret=$ClientSecret" `
                 -var "install_password=$InstallPassword" `
