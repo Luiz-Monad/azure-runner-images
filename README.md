@@ -7,6 +7,7 @@ Run this on Azure shel.
 azps login
 
 $user = Read-Host
+$gallery = Read-Host
 $id = azps account show --query id -o tsv
 
 azps group create `
@@ -33,6 +34,11 @@ azps role assignment create `
    --role Contributor `
    --resource-group azure-github-runner
 
+azps sig create `
+   --resource-group azure-github-runner `
+   --gallery-name $gallery `
+   --location westus3
+      
 ```
 
 Then add the follwing secrets to `github.com/{user}/azure-runner-images/settings/secrets/actions` :
@@ -45,6 +51,7 @@ secrets.AZURE_RESOURCE_GROUP
 secrets.AZURE_STORAGE_ACCOUNT
 secrets.AZURE_SUBSCRIPTION
 secrets.AZURE_TENANT
+secrets.AZURE_SHARED_GALLERY
 secrets.BUILD_AGENT_VNET_NAME
 secrets.BUILD_AGENT_SUBNET_NAME
 secrets.BUILD_AGENT_VNET_RESOURCE_GROUP
