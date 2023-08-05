@@ -1,3 +1,54 @@
+# Steps to Set up
+
+Run this on Azure shel.
+
+```pwsh
+
+azps login
+
+$user = Read-Host
+$id = azps account show --query id -o tsv
+
+azps group create `
+   --location westus3 `
+   --name azure-github-runner
+
+azps ad sp create-for-rbac `
+   --name "https://github.com/$user/azure-runner-images" `
+   --role Contributor `
+   --scopes "/subscriptions/$id/resourceGroups/azure-github-runner"
+
+azps storage account create `
+   --name "$($user)_githubrunner" `
+   --resource-group azure-github-runner `
+   --location westus3 `
+   --sku Standard_LRS
+
+$rbac = azps ad sp list `
+   --display-name "https://github.com/$user/azure-runner-images" `
+   --output json | convertfrom-json
+
+azps role assignment create `
+   --assignee $rbac.Id `
+   --role Contributor `
+   --resource-group azure-github-runner
+
+```
+
+Then add the follwing secrets to `github.com/{user}/azure-runner-images/settings/secrets/actions` :
+
+```
+secrets.CLIENT_ID
+secrets.CLIENT_SECRET
+secrets.AZURE_LOCATION
+secrets.AZURE_RESOURCE_GROUP
+secrets.AZURE_STORAGE_ACCOUNT
+secrets.AZURE_SUBSCRIPTION
+secrets.AZURE_TENANT
+secrets.BUILD_AGENT_VNET_NAME
+secrets.BUILD_AGENT_SUBNET_NAME
+secrets.BUILD_AGENT_VNET_RESOURCE_GROUP
+```
 
 # GitHub Actions Runner Images
 

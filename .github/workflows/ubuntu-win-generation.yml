@@ -96,6 +96,11 @@ jobs:
           PACKER_LOG_PATH: ${{ runner.temp }}/packer-log.txt
           RUN_VALIDATION_FLAG: true
 
+      - name: Output Packer Log
+        if: always()
+        run: |
+          Get-Content -Path "${{ runner.temp }}/packer-log.txt"
+
       - name: Output Readme file content
         run: |
           Get-Content -Path (Join-Path "$env:TemplateDirectoryPath" "${{ inputs.image_readme_name }}")
