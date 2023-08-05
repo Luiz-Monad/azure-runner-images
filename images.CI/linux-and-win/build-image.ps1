@@ -13,8 +13,20 @@ param(
     [String] [Parameter (Mandatory=$false)] $VirtualNetworkRG,
     [String] [Parameter (Mandatory=$false)] $VirtualNetworkName,
     [String] [Parameter (Mandatory=$false)] $VirtualNetworkSubnet,
-    [String] [Parameter (Mandatory=$false)] $AllowedInboundIpAddresses = "[]"
+    [String] [Parameter (Mandatory=$false)] $AllowedInboundIpAddresses = "[]",
+    [String] [Parameter (Mandatory=$false)] $NgrokToken,
+    [String] [Parameter (Mandatory=$false)] $NgrokSSHPubKey
 )
+
+function ConvertTo-Base64 {
+    param (
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [string]$input
+    )
+
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($input)
+    return [System.Convert]::ToBase64String($bytes)
+}
 
 if (-not (Test-Path $TemplatePath))
 {
@@ -61,6 +73,8 @@ packer build `
                 -var "virtual_network_subnet_name=$VirtualNetworkSubnet" `
                 -var "allowed_inbound_ip_addresses=$($AllowedInboundIpAddresses)" `
                 -var "install_password=$InstallPassword" `
+                -var "ngrok_token=$($NgrokToken | ConvertTo-Base64)" `
+                -var "ngrok_ssh_pubkey=$($NgrokSSHPubKey | ConvertTo-Base64)"
                 -color=false `
                 $TemplatePath `
         | Where-Object {
