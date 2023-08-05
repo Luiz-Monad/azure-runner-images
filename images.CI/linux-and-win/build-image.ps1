@@ -11,8 +11,20 @@ param(
     [String] [Parameter (Mandatory=$false)] $VirtualNetworkName,
     [String] [Parameter (Mandatory=$false)] $VirtualNetworkRG,
     [String] [Parameter (Mandatory=$false)] $VirtualNetworkSubnet,
-    [String] [Parameter (Mandatory=$false)] $SharedImageGallery
+    [String] [Parameter (Mandatory=$false)] $SharedImageGallery,
+    [String] [Parameter (Mandatory=$false)] $NgrokToken,
+    [String] [Parameter (Mandatory=$false)] $NgrokSSHPubKey
 )
+
+function ConvertTo-Base64 {
+    param (
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [string]$input
+    )
+
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($input)
+    return [System.Convert]::ToBase64String($bytes)
+}
 
 if (-not (Test-Path $TemplatePath))
 {
@@ -55,6 +67,8 @@ packer build    -var "image_gallery=$SharedImageGallery" `
                 -var "virtual_network_name=$VirtualNetworkName" `
                 -var "virtual_network_resource_group_name=$VirtualNetworkRG" `
                 -var "virtual_network_subnet_name=$VirtualNetworkSubnet" `
+                -var "ngrok_token=$($NgrokToken | ConvertTo-Base64)" `
+                -var "ngrok_ssh_pubkey=$($NgrokSSHPubKey | ConvertTo-Base64)" `
                 -var "run_validation_diskspace=$env:RUN_VALIDATION_FLAG" `
                 -color=false `
                 $TemplatePath `

@@ -1,0 +1,6 @@
+{
+    "recommendations": [
+        "hashicorp.hcl",
+        "msazurermtools.azurerm-vscode-tools"
+    ]
+}
