@@ -174,15 +174,12 @@ source "azure-arm" "build_vhd" {
   image_sku                              = "22_04-lts-gen2"
   image_version                          = "latest"
   location                               = "${var.location}"
-  os_disk_size_gb                        = "6"
+  os_disk_size_gb                        = "30"
   os_type                                = "Linux"
   private_virtual_network_with_public_ip = "${var.private_virtual_network_with_public_ip}"
   subscription_id                        = "${var.subscription_id}"
   temp_resource_group_name               = "${var.temp_resource_group_name}"
   tenant_id                              = "${var.tenant_id}"
-  virtual_network_name                   = "${var.virtual_network_name}"
-  virtual_network_resource_group_name    = "${var.virtual_network_resource_group_name}"
-  virtual_network_subnet_name            = "${var.virtual_network_subnet_name}"
   vm_size                                = "${var.vm_size}"
 
   dynamic "azure_tag" {
