@@ -1,23 +1,34 @@
-name: MMS image generation
+# This file was removed from the upstream
+# we recreate it based on image-generation.yml
+
+name: image generation
 on:
   workflow_call:
     inputs:
-      image_name:
+
+      # Parameters
+
+      image_type:
         type: string
         description: An OS image to build
         required: true
+
+      image_template_name:
+        type: string
+        description: Name of the image template to use
+        required: true
+
       image_readme_name:
         type: string
         description: README file path
         required: true
-      custom_repo:
-        type: string
-        description: Custom repo to checkout
-        required: false
-      custom_repo_commit_hash:
-        type: string
-        description: Custom repo commit hash
-        required: false
+
+      # CI Parameters
+
+      create_release:
+        type: boolean
+        default: false
+
 defaults:
   run:
     shell: pwsh
@@ -28,83 +39,92 @@ jobs:
     if: ${{ github.repository_owner == 'Luiz-Monad' }}
     timeout-minutes: 1200
     steps:
-      - name: Determine checkout type
-        run: |
-          if ("${{ inputs.custom_repo }}" -and "${{ inputs.custom_repo_commit_hash }}") {
-              $checkoutType = "custom_repo"
-          } elseif (("${{ github.event_name }}" -eq "pull_request_target") -and ("${{ github.event.action }}" -eq "labeled" )) {
-              $checkoutType = "pull_request"
-          } else {
-              $checkoutType = "main"
-          }
-          "CHECKOUT_TYPE=$checkoutType" | Out-File -Append $env:GITHUB_ENV
 
+      # Checkout repository
       - name: Checkout repository
-        if: ${{ env.CHECKOUT_TYPE == 'main' }}
         uses: actions/checkout@v3
         with:
           repository: Luiz-Monad/azure-runner-images
-
-      - name: Checkout PR
-        if: ${{ env.CHECKOUT_TYPE == 'pull_request' }}
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Checkout custom repository
-        if: ${{ env.CHECKOUT_TYPE == 'custom_repo' }}
-        uses: actions/checkout@v3
-        with:
-          repository: '${{ inputs.custom_repo }}'
-          ref: '${{ inputs.custom_repo_commit_hash }}'
-
-      - name: Set image variables
+      # Set variables
+      - name: Set variables
         run: |
-          $ImageType = "${{ inputs.image_name }}"
-
-          if ($ImageType.StartsWith("ubuntu")) { $TemplateDirectoryName = "linux" } else { $TemplateDirectoryName = "win" }
-
+          $ImageType = "${{ inputs.image_type }}"
+          $TemplateDirectoryName = if ($ImageType.StartsWith("ubuntu")) { "ubuntu/templates" } else { "windows/templates" }
           $TemplateDirectoryPath = Join-Path "images" $TemplateDirectoryName | Resolve-Path
-          $TemplatePath = Join-Path $TemplateDirectoryPath "$ImageType.pkr.hcl"
 
-          if ( -not (Test-Path $TemplatePath) ) {
-            $TemplatePath = Join-Path $TemplateDirectoryPath "$ImageType.json"
-          }
+          $TemplateFileName = "${{ inputs.image_template_name }}"
+          $TemplatePath = Join-Path $TemplateDirectoryPath $TemplateFileName
 
-          "TemplatePath=$TemplatePath" | Out-File -Append -FilePath $env:GITHUB_ENV
           "TemplateDirectoryPath=$TemplateDirectoryPath" | Out-File -Append -FilePath $env:GITHUB_ENV
-          "ImageType=$ImageType" | Out-File -Append -FilePath $env:GITHUB_ENV
+          "TemplatePath=$TemplatePath" | Out-File -Append -FilePath $env:GITHUB_ENV
 
-      - name: Build image
+          $TempImageName = "${{ inputs.image_type }}-$(Build.BuildId)"          
+          "TempImageName=$TempImageName" | Out-File -Append -FilePath $env:GITHUB_ENV
+
+          $TempResourceGroupName = "packer-temp-$TempImageName"
+          "TempResourceGroupName=$TempResourceGroupName" | Out-File -Append -FilePath $env:GITHUB_ENV
+
+      # Build VM
+      - name: Build VM
         run: |
-            $ResourcesNamePrefix = ${{ github.run_id }} % [System.UInt32]::MaxValue
-            ./images.CI/linux-and-win/build-image.ps1 `
-              -TemplatePath ${{ env.TemplatePath }} `
-              -ClientId ${{ secrets.CLIENT_ID }} `
-              -ClientSecret ${{ secrets.CLIENT_SECRET }} `
-              -Location ${{ secrets.AZURE_LOCATION }} `
-              -ResourcesNamePrefix $ResourcesNamePrefix `
-              -ResourceGroup ${{ secrets.AZURE_RESOURCE_GROUP }} `
-              -StorageAccount ${{ secrets.AZURE_STORAGE_ACCOUNT }} `
-              -SubscriptionId ${{ secrets.AZURE_SUBSCRIPTION }} `
-              -TenantId ${{ secrets.AZURE_TENANT }} `
-              -VirtualNetworkName ${{ secrets.BUILD_AGENT_VNET_NAME }} `
-              -VirtualNetworkSubnet ${{ secrets.BUILD_AGENT_SUBNET_NAME }} `
-              -VirtualNetworkRG ${{ secrets.BUILD_AGENT_VNET_RESOURCE_GROUP }} `
+          ./images.CI/linux-and-win/build-image.ps1 `
+            -TemplatePath ${{ env.TemplatePath }} `
+            -Location ${{ secrets.AZURE_LOCATION }} `
+            -TenantId ${{ secrets.AZURE_TENANT }} `
+            -SubscriptionId ${{ secrets.AZURE_SUBSCRIPTION }} `
+            -ClientId ${{ secrets.CLIENT_ID }} `
+            -ClientSecret ${{ secrets.CLIENT_SECRET }} `
+            -ImageResourceGroupName ${{ secrets.AZURE_RESOURCE_GROUP }} `
+            -ImageGallery ${{ secrets.AZURE_GALLERY }} `
+            -ImageName ${{ secrets.AZURE_GALLERY_IMAGE }} `
+            -ImageVersion ${{ secrets.AZURE_GALLERY_IMAGE_VERSION }} `
+            -TempResourceGroupName ${{ env.TempResourceGroupName }}  `
+            -VirtualNetworkRG ${{ secrets.BUILD_AGENT_VNET_RESOURCE_GROUP }} `
+            -VirtualNetworkName ${{ secrets.BUILD_AGENT_VNET_NAME }} `
+            -VirtualNetworkSubnet ${{ secrets.BUILD_AGENT_SUBNET_NAME }}
+              
         env:
           PACKER_LOG: 1
           PACKER_LOG_PATH: ${{ runner.temp }}/packer-log.txt
-          RUN_VALIDATION_FLAG: true
 
+      # Output packer log
       - name: Output Packer Log
-        if: always()
         run: |
           Get-Content -Path "${{ runner.temp }}/packer-log.txt"
 
-      - name: Output Readme file content
+      # Copy artifacts
+      - name: Copy image artifacts to the separate directory
         run: |
-          Get-Content -Path (Join-Path "$env:TemplateDirectoryPath" "${{ inputs.image_readme_name }}")
+          $ImageType = "${{ inputs.image_type }}"
+          $rootDirectoryName = if ($ImageType.StartsWith("ubuntu")) { "ubuntu" } else { "windows" }
+          $rootDirectoryPath = Join-Path "images" $rootDirectoryName | Resolve-Path
 
+          $readmePath = Join-Path $rootDirectoryPath "${{ inputs.image_readme_name }}"
+          $softwareReportPath = Join-Path $rootDirectoryPath "software-report.json"
+
+          Copy-Item -Path $readmePath -Destination "${{ runner.temp }}/"
+          if (Test-Path $softwareReportPath) {
+              Copy-Item -Path $softwareReportPath -Destination "${{ runner.temp }}/"
+          }
+
+      # Markdown report
+      - name: Print markdown software report
+        run: |
+          Get-Content -Path "${{ runner.temp }}/${{ inputs.image_readme_name }}"
+
+      # Json report
+      - name: Print json software report
+        run: |
+          $softwareReportPath = "${{ runner.temp }}/software-report.json"
+          if (Test-Path $softwareReportPath) {
+              Get-Content -Path $softwareReportPath
+          }
+
+      # Publish artifacts
+      # TODO: not supported on github
+
+
+      # Provisioners duration
       - name: Print provisioners duration
         run: |
           ./images.CI/measure-provisioners-duration.ps1 `
@@ -112,7 +132,9 @@ jobs:
             -PrefixToPathTrim ${{ env.TemplateDirectoryPath }} `
             -PrintTopNLongest 25
 
-      - name: Create release for VM deployment
+      # VM deployment
+      - if: ${{ input.create_release }}
+        name: Create release for VM deployment
         run: |
           $BuildId = ${{ github.run_id }} % [System.UInt32]::MaxValue
           ./images.CI/linux-and-win/create-release.ps1 `
@@ -120,17 +142,16 @@ jobs:
             -Organization ${{ secrets.RELEASE_TARGET_ORGANIZATION }} `
             -DefinitionId ${{ secrets.RELEASE_TARGET_DEFINITION_ID }} `
             -Project ${{ secrets.RELEASE_TARGET_PROJECT }} `
-            -ImageName ${{ env.ImageType }} `
+            -ImageType ${{ inputs.image_type }} `
+            -ImageName ${{ secrets.AZURE_GALLERY_IMAGE }} `
             -AccessToken ${{ secrets.RELEASE_TARGET_TOKEN }}
 
+      # Cleanup
       - name: Clean up resources
-        if: ${{ always() }}
         run: |
           ./images.CI/linux-and-win/cleanup.ps1 `
-            -ResourcesNamePrefix ${{ github.run_number }} `
-            -Image ${{ env.ImageType }} `
-            -StorageAccount ${{ secrets.AZURE_STORAGE_ACCOUNT }} `
-            -SubscriptionId ${{ secrets.AZURE_SUBSCRIPTION }} `
-            -ClientId ${{ secrets.CLIENT_ID }} `
-            -ClientSecret ${{ secrets.CLIENT_SECRET }} `
-            -TenantId ${{ secrets.AZURE_TENANT }}
+            -TenantId $(AZURE_TENANT) `
+            -SubscriptionId $(AZURE_SUBSCRIPTION) `
+            -ClientId $(CLIENT_ID) `
+            -ClientSecret $(CLIENT_SECRET) `
+            -TempResourceGroupName "${{ env.TempResourceGroupName }}"

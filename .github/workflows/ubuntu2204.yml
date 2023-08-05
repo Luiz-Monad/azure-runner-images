@@ -12,7 +12,9 @@ defaults:
 
 jobs:
   Ubuntu_2204:
-    uses: ./.github/workflows/trigger-ubuntu-win-build.yml
+    uses: ./.github/workflows/ubuntu-win-generation.yml
     with:
-      image_type: 'ubuntu2204'
+      image_type: ubuntu2204
+      image_readme_name: Ubuntu2204-Readme.md
+      image_template_name: ubuntu-22.04.pkr.hcl
     secrets: inherit

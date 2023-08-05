@@ -7,10 +7,6 @@ packer {
   }
 }
 
-locals {
-  managed_image_name = var.managed_image_name != "" ? var.managed_image_name : "packer-${var.image_os}-${var.image_version}"
-}
-
 variable "allowed_inbound_ip_addresses" {
   type    = list(string)
   default = []
@@ -26,9 +22,29 @@ variable "build_resource_group_name" {
   default = "${env("BUILD_RESOURCE_GROUP_NAME")}"
 }
 
-variable "client_cert_path" {
+variable "image_resource_group_name" {
   type    = string
-  default = "${env("ARM_CLIENT_CERT_PATH")}"
+  default = "${env("ARM_RESOURCE_GROUP")}"
+}
+
+variable "image_gallery" {
+  type    = string
+  default = "test"
+}
+
+variable "image_name" {
+  type    = string
+  default = "ubuntu"
+}
+
+variable "image_version" {
+  type    = string
+  default = "1"
+}
+
+variable "image_os" {
+  type    = string
+  default = "ubuntu22"
 }
 
 variable "client_id" {
@@ -40,6 +56,11 @@ variable "client_secret" {
   type      = string
   default   = "${env("ARM_CLIENT_SECRET")}"
   sensitive = true
+}
+
+variable "client_cert_path" {
+  type    = string
+  default = "${env("ARM_CLIENT_CERT_PATH")}"
 }
 
 variable "dockerhub_login" {
@@ -62,16 +83,6 @@ variable "image_folder" {
   default = "/imagegeneration"
 }
 
-variable "image_os" {
-  type    = string
-  default = "ubuntu22"
-}
-
-variable "image_version" {
-  type    = string
-  default = "dev"
-}
-
 variable "imagedata_file" {
   type    = string
   default = "/imagegeneration/imagedata.json"
@@ -91,16 +102,6 @@ variable "install_password" {
 variable "location" {
   type    = string
   default = "${env("ARM_RESOURCE_LOCATION")}"
-}
-
-variable "managed_image_name" {
-  type    = string
-  default = ""
-}
-
-variable "managed_image_resource_group_name" {
-  type    = string
-  default = "${env("ARM_RESOURCE_GROUP")}"
 }
 
 variable "private_virtual_network_with_public_ip" {
@@ -143,6 +144,11 @@ variable "vm_size" {
   default = "Standard_D4s_v4"
 }
 
+variable "storage_type" {
+  type    = string
+  default = "Standard_LRS"
+}
+
 source "azure-arm" "build_image" {
   location                               = "${var.location}"
   
@@ -155,13 +161,20 @@ source "azure-arm" "build_image" {
 
   // Base image
   image_offer                            = "0001-com-ubuntu-server-jammy"
-  image_publisher                        = "canonical"
+  image_publisher                        = "Canonical"
   image_sku                              = "22_04-lts-gen2"
+  image_version                          = "latest"
 
   // Target location
-  managed_image_name                     = "${local.managed_image_name}"
-  managed_image_resource_group_name      = "${var.managed_image_resource_group_name}"
-  
+  shared_image_gallery_destination {
+      subscription                       = "${var.subscription_id}"
+      resource_group                     = "${var.image_resource_group_name}"
+      gallery_name                       = "${var.image_gallery}"
+      image_name                         = "${var.image_name}"
+      image_version                      = "${var.image_version}"
+      storage_account_type               = "${var.storage_type}"
+  }
+
   // Resource group for VM
   build_resource_group_name              = "${var.build_resource_group_name}"
   temp_resource_group_name               = "${var.temp_resource_group_name}"
@@ -175,7 +188,7 @@ source "azure-arm" "build_image" {
 
   // VM Configuration
   vm_size                                = "${var.vm_size}"
-  os_disk_size_gb                        = "75"
+  os_disk_size_gb                        = "6"
   os_type                                = "Linux"
 
   dynamic "azure_tag" {
