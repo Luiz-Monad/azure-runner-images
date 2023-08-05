@@ -156,7 +156,7 @@ source "azure-arm" "build_image" {
   // Base image
   image_offer                            = "0001-com-ubuntu-server-jammy"
   image_publisher                        = "canonical"
-  image_sku                              = "22_04-lts"
+  image_sku                              = "22_04-lts-gen2"
 
   // Target location
   managed_image_name                     = "${local.managed_image_name}"
