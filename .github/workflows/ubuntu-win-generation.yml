@@ -24,12 +24,8 @@ defaults:
 
 jobs:
   build:
-    #
-    # "azure-builds" is dedicated runner not available in forks.
-    # to reduce undesired run attempts in forks, stick jobs to "actions" organization only
-    #
-    runs-on: azure-builds
-    if: ${{ github.repository_owner == 'actions' }}
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'Luiz-Monad' }}
     timeout-minutes: 1200
     steps:
       - name: Determine checkout type
@@ -47,7 +43,7 @@ jobs:
         if: ${{ env.CHECKOUT_TYPE == 'main' }}
         uses: actions/checkout@v3
         with:
-          repository: actions/runner-images
+          repository: Luiz-Monad/azure-runner-images
 
       - name: Checkout PR
         if: ${{ env.CHECKOUT_TYPE == 'pull_request' }}
