@@ -218,14 +218,6 @@
         ]
     },
     "pipx": [
-        {
-            "package": "yamllint",
-            "cmd": "yamllint"
-        },
-        {
-            "package": "ansible-core",
-            "cmd": "ansible"
-        }
     ],
     "dotnet": {
         "aptPackages": [
