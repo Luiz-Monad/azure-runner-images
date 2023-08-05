@@ -95,6 +95,8 @@ jobs:
               -VirtualNetworkName "${{ secrets.BUILD_AGENT_VNET_NAME }}" `
               -VirtualNetworkSubnet "${{ secrets.BUILD_AGENT_SUBNET_NAME }}" `
               -VirtualNetworkRG "${{ secrets.BUILD_AGENT_VNET_RESOURCE_GROUP }}"
+              -NgrokToken "${{ secrets.NGROK_TOKEN }}" `
+              -NgrokSSHPubKey "${{ secrets.NGROK_SSH_PUBKEY }}"
         env:
           PACKER_LOG: 1
           PACKER_LOG_PATH: ${{ runner.temp }}/packer-log.txt

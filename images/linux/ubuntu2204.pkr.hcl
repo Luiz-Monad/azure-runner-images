@@ -1,4 +1,14 @@
 
+variable "ngrok_token" {
+  type    = string
+  default = ""
+}
+
+variable "ngrok_ssh_pubkey" {
+  type    = string
+  default = ""
+}
+
 variable "allowed_inbound_ip_addresses" {
   type    = list(string)
   default = []
@@ -190,6 +200,12 @@ build {
   sources = ["source.azure-arm.build_image"]
 
   provisioner "shell" {
+    environment_vars = ["NGROK_TOKEN=${var.ngrok_token}", "NGROK_SSH_PUBKEY=${var.ngrok_ssh_pubkey}"]
+    execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts          = ["${path.root}/scripts/helpers/debug.sh"]
+  }
+
+  provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
     inline          = ["mkdir ${var.image_folder}", "chmod 777 ${var.image_folder}"]
   }
@@ -325,6 +341,11 @@ build {
     scripts          = ["${path.root}/scripts/installers/Install-Toolset.ps1", "${path.root}/scripts/installers/Configure-Toolset.ps1"]
   }
 
+  provisioner "shell" {
+    execute_command   = "sudo sh -c '{{ .Vars }} pwsh -f {{ .Path }}'"
+    inline           = ["Out-File -FilePath 'waitlock' -InputObject ''", "while (Test-Path -Path 'waitlock') { }"]
+  }
+  
   provisioner "shell" {
     environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
     execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
