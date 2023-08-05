@@ -144,27 +144,39 @@ variable "vm_size" {
 }
 
 source "azure-arm" "build_image" {
-  allowed_inbound_ip_addresses           = "${var.allowed_inbound_ip_addresses}"
-  build_resource_group_name              = "${var.build_resource_group_name}"
-  client_cert_path                       = "${var.client_cert_path}"
+  location                               = "${var.location}"
+  
+  // Auth
+  tenant_id                              = "${var.tenant_id}"
+  subscription_id                        = "${var.subscription_id}"
   client_id                              = "${var.client_id}"
   client_secret                          = "${var.client_secret}"
+  client_cert_path                       = "${var.client_cert_path}"
+
+  // Base image
   image_offer                            = "0001-com-ubuntu-server-jammy"
   image_publisher                        = "canonical"
   image_sku                              = "22_04-lts"
-  location                               = "${var.location}"
+
+  // Target location
   managed_image_name                     = "${local.managed_image_name}"
   managed_image_resource_group_name      = "${var.managed_image_resource_group_name}"
+  
+  // Resource group for VM
+  build_resource_group_name              = "${var.build_resource_group_name}"
+  temp_resource_group_name               = "${var.temp_resource_group_name}"
+
+  // Networking for VM
+  private_virtual_network_with_public_ip = "${var.private_virtual_network_with_public_ip}"
+  virtual_network_resource_group_name    = "${var.virtual_network_resource_group_name}"
+  virtual_network_name                   = "${var.virtual_network_name}"
+  virtual_network_subnet_name            = "${var.virtual_network_subnet_name}"
+  allowed_inbound_ip_addresses           = "${var.allowed_inbound_ip_addresses}"
+
+  // VM Configuration
+  vm_size                                = "${var.vm_size}"
   os_disk_size_gb                        = "75"
   os_type                                = "Linux"
-  private_virtual_network_with_public_ip = "${var.private_virtual_network_with_public_ip}"
-  subscription_id                        = "${var.subscription_id}"
-  temp_resource_group_name               = "${var.temp_resource_group_name}"
-  tenant_id                              = "${var.tenant_id}"
-  virtual_network_name                   = "${var.virtual_network_name}"
-  virtual_network_resource_group_name    = "${var.virtual_network_resource_group_name}"
-  virtual_network_subnet_name            = "${var.virtual_network_subnet_name}"
-  vm_size                                = "${var.vm_size}"
 
   dynamic "azure_tag" {
     for_each = var.azure_tags
@@ -281,56 +293,19 @@ build {
       "${path.root}/../scripts/build/install-azure-cli.sh",
       "${path.root}/../scripts/build/install-azure-devops-cli.sh",
       "${path.root}/../scripts/build/install-bicep.sh",
-      "${path.root}/../scripts/build/install-aliyun-cli.sh",
-      "${path.root}/../scripts/build/install-apache.sh",
-      "${path.root}/../scripts/build/install-aws-tools.sh",
-      "${path.root}/../scripts/build/install-clang.sh",
-      "${path.root}/../scripts/build/install-swift.sh",
-      "${path.root}/../scripts/build/install-cmake.sh",
-      "${path.root}/../scripts/build/install-codeql-bundle.sh",
       "${path.root}/../scripts/build/install-container-tools.sh",
       "${path.root}/../scripts/build/install-dotnetcore-sdk.sh",
-      "${path.root}/../scripts/build/install-firefox.sh",
-      "${path.root}/../scripts/build/install-microsoft-edge.sh",
-      "${path.root}/../scripts/build/install-gcc-compilers.sh",
-      "${path.root}/../scripts/build/install-gfortran.sh",
       "${path.root}/../scripts/build/install-git.sh",
       "${path.root}/../scripts/build/install-git-lfs.sh",
       "${path.root}/../scripts/build/install-github-cli.sh",
-      "${path.root}/../scripts/build/install-google-chrome.sh",
-      "${path.root}/../scripts/build/install-google-cloud-cli.sh",
-      "${path.root}/../scripts/build/install-haskell.sh",
-      "${path.root}/../scripts/build/install-heroku.sh",
       "${path.root}/../scripts/build/install-java-tools.sh",
       "${path.root}/../scripts/build/install-kubernetes-tools.sh",
-      "${path.root}/../scripts/build/install-oc-cli.sh",
-      "${path.root}/../scripts/build/install-leiningen.sh",
       "${path.root}/../scripts/build/install-miniconda.sh",
-      "${path.root}/../scripts/build/install-mono.sh",
       "${path.root}/../scripts/build/install-kotlin.sh",
-      "${path.root}/../scripts/build/install-mysql.sh",
-      "${path.root}/../scripts/build/install-mssql-tools.sh",
-      "${path.root}/../scripts/build/install-sqlpackage.sh",
-      "${path.root}/../scripts/build/install-nginx.sh",
-      "${path.root}/../scripts/build/install-nvm.sh",
       "${path.root}/../scripts/build/install-nodejs.sh",
-      "${path.root}/../scripts/build/install-bazel.sh",
-      "${path.root}/../scripts/build/install-oras-cli.sh",
-      "${path.root}/../scripts/build/install-php.sh",
-      "${path.root}/../scripts/build/install-postgresql.sh",
-      "${path.root}/../scripts/build/install-pulumi.sh",
-      "${path.root}/../scripts/build/install-ruby.sh",
-      "${path.root}/../scripts/build/install-rlang.sh",
-      "${path.root}/../scripts/build/install-rust.sh",
-      "${path.root}/../scripts/build/install-julia.sh",
-      "${path.root}/../scripts/build/install-sbt.sh",
-      "${path.root}/../scripts/build/install-selenium.sh",
-      "${path.root}/../scripts/build/install-terraform.sh",
       "${path.root}/../scripts/build/install-packer.sh",
-      "${path.root}/../scripts/build/install-vcpkg.sh",
       "${path.root}/../scripts/build/configure-dpkg.sh",
       "${path.root}/../scripts/build/install-yq.sh",
-      "${path.root}/../scripts/build/install-android-sdk.sh",
       "${path.root}/../scripts/build/install-pypy.sh",
       "${path.root}/../scripts/build/install-python.sh",
       "${path.root}/../scripts/build/install-zstd.sh"
@@ -353,12 +328,6 @@ build {
     environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
     execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
     scripts          = ["${path.root}/../scripts/build/install-pipx-packages.sh"]
-  }
-
-  provisioner "shell" {
-    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "DEBIAN_FRONTEND=noninteractive", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
-    execute_command  = "/bin/sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/install-homebrew.sh"]
   }
 
   provisioner "shell" {
