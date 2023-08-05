@@ -174,7 +174,7 @@ source "azure-arm" "build_vhd" {
   image_sku                              = "22_04-lts-gen2"
   image_version                          = "latest"
   location                               = "${var.location}"
-  os_disk_size_gb                        = "30"
+  os_disk_size_gb                        = "40"
   os_type                                = "Linux"
   private_virtual_network_with_public_ip = "${var.private_virtual_network_with_public_ip}"
   subscription_id                        = "${var.subscription_id}"
