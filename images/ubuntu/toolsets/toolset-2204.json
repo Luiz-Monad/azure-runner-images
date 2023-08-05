@@ -69,7 +69,7 @@
     ],
     "java": {
         "default": "11",
-        "versions": [ "8", "11", "17", "21"],
+        "versions": [ "21" ],
         "maven": "3.8.8"
     },
     "android": {
@@ -97,7 +97,6 @@
     },
     "powershellModules": [
         {"name": "MarkdownPS"},
-        {"name": "Microsoft.Graph"},
         {"name": "Pester"},
         {"name": "PSScriptAnalyzer"}
     ],
@@ -211,21 +210,6 @@
     ],
     "docker": {
         "images": [
-            "alpine:3.16",
-            "alpine:3.17",
-            "alpine:3.18",
-            "alpine:3.19",
-            "debian:10",
-            "debian:11",
-            "moby/buildkit:latest",
-            "node:18",
-            "node:20",
-            "node:22",
-            "node:18-alpine",
-            "node:20-alpine",
-            "node:22-alpine",
-            "ubuntu:20.04",
-            "ubuntu:22.04"
         ],
         "components": [
             {
@@ -246,7 +230,7 @@
                 "plugin": "buildx",
                 "version": "latest",
                 "asset": "linux-amd64"
-            },
+            },            
             {
                 "plugin": "compose",
                 "version": "2.27.1",
@@ -258,20 +242,14 @@
         {
             "package": "yamllint",
             "cmd": "yamllint"
-        },
-        {
-            "package": "ansible-core",
-            "cmd": "ansible"
         }
     ],
     "dotnet": {
         "aptPackages": [
-            "dotnet-sdk-6.0",
             "dotnet-sdk-7.0",
             "dotnet-sdk-8.0"
         ],
         "versions": [
-            "6.0",
             "7.0",
             "8.0"
         ],
@@ -329,10 +307,6 @@
             "command": "n"
         },
         {
-            "name": "parcel",
-            "command": "parcel"
-        },
-        {
             "name": "typescript",
             "command": "tsc"
         },
@@ -341,20 +315,12 @@
             "command": "newman"
         },
         {
-            "name": "vercel",
-            "command": "vercel"
-        },
-        {
             "name": "webpack",
             "command": "webpack"
         },
         {
             "name": "webpack-cli",
             "command": "webpack-cli"
-        },
-        {
-            "name": "netlify-cli",
-            "command": "netlify"
         },
         {
             "name": "lerna",
