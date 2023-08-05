@@ -3,7 +3,7 @@ param(
     [Parameter (Mandatory)] [string] $Organization,
     [Parameter (Mandatory)] [string] $Project,
     [Parameter (Mandatory)] [string] $ImageType,
-    [Parameter (Mandatory)] [string] $ManagedImageName,
+    [Parameter (Mandatory)] [string] $ImageName,
     [Parameter (Mandatory)] [string] $DefinitionId,
     [Parameter (Mandatory)] [string] $AccessToken
 )
@@ -17,8 +17,8 @@ $Body = @{
       ImageType = @{
         value = $ImageType
       }
-      ManagedImageName = @{
-        value = $ManagedImageName
+      ImageName = @{
+        value = $ImageName
       }
     }
     isDraft = "false"
