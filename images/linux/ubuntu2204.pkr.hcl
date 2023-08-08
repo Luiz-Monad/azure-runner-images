@@ -345,10 +345,6 @@ build {
     scripts          = ["${path.root}/scripts/installers/Install-Toolset.ps1", "${path.root}/scripts/installers/Configure-Toolset.ps1"]
   }
 
-  // provisioner "shell" {
-  //   execute_command   = "sudo sh -c '{{ .Vars }} pwsh -f {{ .Path }}'"
-  //   inline           = ["Out-File -FilePath 'waitlock' -InputObject ''", "while (Test-Path -Path 'waitlock') { }"]
-  // }
   
   provisioner "shell" {
     environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
@@ -379,6 +375,11 @@ build {
     script          = "${path.root}/scripts/base/apt-mock-remove.sh"
   }
 
+  // provisioner "shell" {
+  //   execute_command   = "sudo sh -c '{{ .Vars }} pwsh -f {{ .Path }}'"
+  //   inline           = ["Out-File -FilePath 'waitlock' -InputObject ''", "while (Test-Path -Path 'waitlock') { }"]
+  // }
+  
   provisioner "shell" {
     environment_vars = ["IMAGE_VERSION=${var.image_version}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
     inline           = ["pwsh -File ${var.image_folder}/SoftwareReport/SoftwareReport.Generator.ps1 -OutputDirectory ${var.image_folder}", "pwsh -File ${var.image_folder}/tests/RunAll-Tests.ps1 -OutputDirectory ${var.image_folder}"]

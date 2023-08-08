@@ -4,10 +4,11 @@ function Get-CommandResult {
         [string] $Command,
         [int[]] $ExpectExitCode = 0,
         [switch] $Multiline,
-        [bool] $ValidateExitCode = $true
+        [bool] $ValidateExitCode = $false
     )
 
     # Bash trick to suppress and show error output because some commands write to stderr (for example, "python --version")
+    Write-Verbose "running [$Command]"
     $stdout = & bash -c "$Command 2>&1"
     $exitCode = $LASTEXITCODE
 
