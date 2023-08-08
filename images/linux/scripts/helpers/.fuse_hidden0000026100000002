@@ -1,3 +1,0 @@
-t=2023-08-08T06:45:45-0500 lvl=info msg="no configuration paths supplied"
-t=2023-08-08T06:45:45-0500 lvl=info msg="using configuration at default config path" path=/root/.config/ngrok/ngrok.yml
-t=2023-08-08T06:45:45-0500 lvl=info msg="open config file" path=/root/.config/ngrok/ngrok.yml err=nil
