@@ -5,6 +5,17 @@ class SoftwareReport {
     [ValidateNotNullOrEmpty()]
     [HeaderNode] $Root
 
+    SoftwareReport([String] $Title, [ScriptBlock]$Version) {
+        $str = $Title
+        if ($Version -is [ScriptBlock]) {
+            try {
+                $str = "$str" + [String] (& $Version)
+            } catch {
+            }
+        }
+        $this.Root = [HeaderNode]::new($str)
+    }
+
     SoftwareReport([String] $Title) {
         $this.Root = [HeaderNode]::new($Title)
     }
