@@ -41,6 +41,10 @@ Describe "Swift" {
 Describe "PipxPackages" {
     $testCases = (Get-ToolsetContent).pipx | ForEach-Object { @{package=$_.package; cmd = $_.cmd} }
 
+    It "list" {
+        "pipx list" | Should -ReturnZeroExitCode
+    }
+
     It "<package>" -TestCases $testCases {
         "$cmd --version" | Should -ReturnZeroExitCode
     }
