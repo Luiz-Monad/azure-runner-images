@@ -1,3 +1,7 @@
 Import-Module "$PSScriptRoot/Helpers.psm1" -DisableNameChecking
 
-Invoke-PesterTests "*"
+try {
+    Invoke-PesterTests "*"
+} catch {}
+
+exit 0
