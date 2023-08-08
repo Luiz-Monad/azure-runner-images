@@ -38,7 +38,15 @@ class HeaderNode: BaseNode {
         return $true
     }
 
-    [void] AddNode([BaseNode] $node) {
+    [void] AddNode($node) {
+        if ($node -is [ScriptBlock]) {
+            try {
+                $node = [BaseNode] (& $node)
+            } catch {
+                return
+            }
+        }
+        if (-not $node) { return }
         $similarNode = $this.FindSimilarChildNode($node)
         if ($similarNode) {
             throw "This HeaderNode already contains the similar child node. It is not allowed to add the same node twice.`nFound node: $($similarNode.ToJsonObject() | ConvertTo-Json)`nNew node: $($node.ToJsonObject() | ConvertTo-Json)"
@@ -64,7 +72,15 @@ class HeaderNode: BaseNode {
         $this.Children.Add($node)
     }
 
-    [void] AddNodes([BaseNode[]] $nodes) {
+    [void] AddNodes($nodes) {
+        if ($nodes -is [ScriptBlock]) {
+            try {
+                $nodes = [BaseNode[]] (& $nodes)
+            } catch {
+                return
+            }
+        }
+        if (-not $nodes) { return }
         $nodes | ForEach-Object {
             $this.AddNode($_)
         }
@@ -76,23 +92,63 @@ class HeaderNode: BaseNode {
         return $node
     }
 
-    [void] AddToolVersion([String] $ToolName, [String] $Version) {
+    [void] AddToolVersion([String] $ToolName, $Version) {
+        if ($Version -is [ScriptBlock]) {
+            try {
+                $Version = [String] (& $Version)
+            } catch {
+                return
+            }
+        }
+        if (-not $Version) { return }
         $this.AddNode([ToolVersionNode]::new($ToolName, $Version))
     }
 
-    [void] AddToolVersionsList([String] $ToolName, [String[]] $Version, [String] $MajorVersionRegex) {
+    [void] AddToolVersionsList([String] $ToolName, $Version, [String] $MajorVersionRegex) {`
+        if ($Version -is [ScriptBlock]) {
+            try {
+                $Version = [String[]] (& $Version)
+            } catch {
+                return
+            }
+        }
+        if (-not $Version) { return }
         $this.AddNode([ToolVersionsListNode]::new($ToolName, $Version, $MajorVersionRegex, "List"))
     }
 
-    [void] AddToolVersionsListInline([String] $ToolName, [String[]] $Version, [String] $MajorVersionRegex) {
+    [void] AddToolVersionsListInline([String] $ToolName, $Version, [String] $MajorVersionRegex) {
+        if ($Version -is [ScriptBlock]) {
+            try {
+                $Version = [String[]] (& $Version)
+            } catch {
+                return
+            }
+        }
+        if (-not $Version) { return }
         $this.AddNode([ToolVersionsListNode]::new($ToolName, $Version, $MajorVersionRegex, "Inline"))
     }
      
-    [void] AddTable([PSCustomObject[]] $Table) {
+    [void] AddTable($Table) {
+        if ($Table -is [ScriptBlock]) {
+            try {
+                $Table = [PSCustomObject[]] (& $Table)
+            } catch {
+                return
+            }
+        }
+        if (-not $Table) { return }
         $this.AddNode([TableNode]::FromObjectsArray($Table))
     }
 
-    [void] AddNote([String] $Content) {
+    [void] AddNote($Content) {
+        if ($Content -is [ScriptBlock]) {
+            try {
+                $Content = [String] (& $Content)
+            } catch {
+                return
+            }
+        }
+        if (-not $Content) { return }
         $this.AddNode([NoteNode]::new($Content))
     }
 
@@ -103,7 +159,6 @@ class HeaderNode: BaseNode {
         $this.Children  | ForEach-Object {
             $sb.AppendLine($_.ToMarkdown($Level + 1))
         }
-
         return $sb.ToString().TrimEnd()
     }
 

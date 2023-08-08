@@ -185,6 +185,7 @@ function Get-Pip3Version {
 
 function Get-VcpkgVersion {
     $commitId = git -C "/usr/local/share/vcpkg" rev-parse --short HEAD
+    if (-not $commitId) { return $null }
     return "(build from commit $commitId)"
 }
 
