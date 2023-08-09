@@ -34,7 +34,6 @@ if (-not (Test-Path $TemplatePath))
     exit 1
 }
 
-$ImageTemplateName = [io.path]::GetFileName($TemplatePath).Split(".")[0]
 $InstallPassword = [System.GUID]::NewGuid().ToString().ToUpper()
 
 $SensitiveData = @(
@@ -56,7 +55,7 @@ packer init $TemplatePath
 Write-Host "Validate packer template"
 packer validate -syntax-only $TemplatePath
 
-Write-Host "Build $ImageTemplateName VM"
+Write-Host "Build $ImageName ($ImageVersion) VM"
 packer build `
                 -var "location=$Location" `
                 -var "tenant_id=$TenantId" `
