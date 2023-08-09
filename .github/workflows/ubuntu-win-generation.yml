@@ -121,17 +121,6 @@ jobs:
             -PrefixToPathTrim ${{ env.TemplateDirectoryPath }} `
             -PrintTopNLongest 25
 
-      - name: Create release for VM deployment
-        run: |
-          $BuildId = ${{ github.run_id }} % [System.UInt32]::MaxValue
-          ./images.CI/linux-and-win/create-release.ps1 `
-            -BuildId $BuildId `
-            -Organization ${{ secrets.RELEASE_TARGET_ORGANIZATION }} `
-            -DefinitionId ${{ secrets.RELEASE_TARGET_DEFINITION_ID }} `
-            -Project ${{ secrets.RELEASE_TARGET_PROJECT }} `
-            -ImageName ${{ env.ImageType }} `
-            -AccessToken ${{ secrets.RELEASE_TARGET_TOKEN }}
-
       - name: Clean up resources
         if: ${{ always() }}
         run: |
