@@ -8,6 +8,16 @@ on:
 
       # Parameters
 
+      image_name:
+        type: string
+        description: Gallery - name of image
+        required: true
+
+      image_version:
+        type: string
+        description: Gallery - version of image
+        required: true
+
       image_type:
         type: string
         description: An OS image to build
@@ -76,8 +86,8 @@ jobs:
             -ClientSecret ${{ secrets.CLIENT_SECRET }} `
             -ImageResourceGroupName ${{ secrets.AZURE_RESOURCE_GROUP }} `
             -ImageGallery ${{ secrets.AZURE_GALLERY }} `
-            -ImageName ${{ secrets.AZURE_GALLERY_IMAGE }} `
-            -ImageVersion ${{ secrets.AZURE_GALLERY_IMAGE_VERSION }} `
+            -ImageName "${{ inputs.image_name }}" `
+            -ImageVersion "${{ inputs.image_version }}" `
             -TempResourceGroupName ${{ env.TempResourceGroupName }}  `
             -VirtualNetworkRG ${{ secrets.BUILD_AGENT_VNET_RESOURCE_GROUP }} `
             -VirtualNetworkName ${{ secrets.BUILD_AGENT_VNET_NAME }} `
@@ -145,7 +155,7 @@ jobs:
             -DefinitionId ${{ secrets.RELEASE_TARGET_DEFINITION_ID }} `
             -Project ${{ secrets.RELEASE_TARGET_PROJECT }} `
             -ImageType ${{ inputs.image_type }} `
-            -ImageName ${{ secrets.AZURE_GALLERY_IMAGE }} `
+            -ImageName "${{ inputs.image_name }}" `
             -AccessToken ${{ secrets.RELEASE_TARGET_TOKEN }}
 
       # Cleanup

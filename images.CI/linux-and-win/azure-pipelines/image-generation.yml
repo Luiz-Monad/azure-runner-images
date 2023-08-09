@@ -12,6 +12,12 @@ parameters:
 
   # Parameters
 
+  - name: image_name
+    type: string
+
+  - name: image_version
+    type: string
+
   - name: image_type
     type: string
 
@@ -100,8 +106,8 @@ jobs:
                  -ClientSecret "$(CLIENT_SECRET)" `
                  -ImageResourceGroupName "$(AZURE_RESOURCE_GROUP)" `
                  -ImageGallery "$(AZURE_GALLERY)" `
-                 -ImageName "$(AZURE_GALLERY_IMAGE)" `
-                 -ImageVersion "$(AZURE_GALLERY_IMAGE_VERSION)" `
+                 -ImageName "${{ parameters.image_name }}" `
+                 -ImageVersion "${{ parameters.image_version }}" `
                  -TempResourceGroupName "$(TempResourceGroupName)" `
                  -VirtualNetworkRG "$(BUILD_AGENT_VNET_RESOURCE_GROUP)" `
                  -VirtualNetworkName "$(BUILD_AGENT_VNET_NAME)" `
@@ -184,7 +190,7 @@ jobs:
                    -DefinitionId $(RELEASE_TARGET_DEFINITION_ID) `
                    -Project $(RELEASE_TARGET_PROJECT) `
                    -ImageType "${{ parameters.image_type }}" `
-                   -ImageName "$(AZURE_GALLERY_IMAGE)" `
+                   -ImageName "${{ parameters.image_name }}" `
                    -AccessToken $(RELEASE_TARGET_TOKEN)
   # Cleanup
   - task: PowerShell@2
