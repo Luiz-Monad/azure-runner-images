@@ -6,6 +6,10 @@ on:
         type: string
         description: An OS image to build
         required: true
+      image_version:
+        type: string
+        description: Version that will be published to gallery
+        required: true
       image_readme_name:
         type: string
         description: README file path
@@ -80,6 +84,8 @@ jobs:
             $ResourcesNamePrefix = ${{ github.run_id }} % [System.UInt32]::MaxValue
             ./images.CI/linux-and-win/build-image.ps1 `
               -TemplatePath "${{ env.TemplatePath }}" `
+              -ImageName "${{ inputs.image_name }}" `
+              -ImageVersion "${{ inputs.image_version }}" `
               -ClientId "${{ secrets.CLIENT_ID }}" `
               -ClientSecret "${{ secrets.CLIENT_SECRET }}" `
               -Location "${{ secrets.AZURE_LOCATION }}" `

@@ -1,5 +1,7 @@
 param(
     [String] [Parameter (Mandatory=$true)] $TemplatePath,
+    [String] [Parameter (Mandatory=$true)] $ImageName,
+    [String] [Parameter (Mandatory=$true)] $ImageVersion,    
     [String] [Parameter (Mandatory=$true)] $ClientId,
     [String] [Parameter (Mandatory=$true)] $ClientSecret,
     [String] [Parameter (Mandatory=$true)] $ResourcesNamePrefix,
@@ -32,8 +34,8 @@ if (-not (Test-Path $TemplatePath))
     exit 1
 }
 
-$Image = [io.path]::GetFileName($TemplatePath).Split(".")[0]
-$TempResourceGroupName = "${ResourcesNamePrefix}_${Image}"
+$GroupName = [io.path]::GetFileName($TemplatePath).Split(".")[0]
+$TempResourceGroupName = "${ResourcesNamePrefix}_${GroupName}"
 $InstallPassword = [System.GUID]::NewGuid().ToString().ToUpper()
 
 packer validate -syntax-only $TemplatePath
@@ -51,10 +53,10 @@ $SensitiveData = @(
 Write-Host "Show Packer Version"
 packer --version
 
-Write-Host "Build $Image VM"
+Write-Host "Build $ImageName ($ImageVersion) VM"
 packer build    -var "image_gallery=$SharedImageGallery" `
-                -var "image_name=$Image" `
-                -var "image_version=$ResourcesNamePrefix" `
+                -var "image_name=$ImageName" `
+                -var "image_version=$ImageVersion" `
                 -var "client_id=$ClientId" `
                 -var "client_secret=$ClientSecret" `
                 -var "install_password=$InstallPassword" `
