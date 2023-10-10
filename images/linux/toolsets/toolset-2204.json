@@ -68,7 +68,7 @@
     ],
     "java": {
         "default": "11",
-        "versions": [ "8", "11", "17" ],
+        "versions": [ "17" ],
         "maven": "3.8.8"
     },
     "android": {
@@ -96,7 +96,6 @@
     },
     "powershellModules": [
         {"name": "MarkdownPS"},
-        {"name": "Microsoft.Graph"},
         {"name": "Pester"},
         {"name": "PSScriptAnalyzer"}
     ],
