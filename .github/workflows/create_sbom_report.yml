@@ -42,7 +42,7 @@ jobs:
       - name: Run SYFT on Windows
         if: ${{ runner.os == 'Windows' }}
         run: D:/syft/syft dir:C:/ -vv -o spdx-json=sbom.json
-      - name: Run SYFT on Ubuntu
+      - name: Run SYFT on Linux
         if: ${{ runner.os == 'Linux' }}
         run: syft dir:/ -vv -o spdx-json=sbom.json
       - name: Run SYFT on macOS

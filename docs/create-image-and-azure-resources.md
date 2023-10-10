@@ -295,7 +295,7 @@ The scripts are copied to the image during the generation process to the followi
   Get-ChildItem C:\post-generation -Filter *.ps1 | ForEach-Object { & $_.FullName }
   ```
 
-### Script details: Ubuntu
+### Script details: Linux
 
 - **cleanup-logs.sh** - removes all build process logs from the machine
 - **environment-variables.sh** - replaces `$HOME` with the default user's home directory for environmental variables related to the default user home directory

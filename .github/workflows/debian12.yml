@@ -1,0 +1,32 @@
+run-name: Debian12 - ${{ (github.event.pull_request.title || 'scheduled/manual run') }}
+on:
+  workflow_dispatch:
+    inputs:
+      CUSTOM_REPOSITORY:
+        description: 'Custom repository (owner/repo)'
+        required: false
+      CUSTOM_REPOSITORY_COMMIT_HASH:
+        description: 'Commit hash'
+        required: false
+  push:
+    branches: 
+    - main
+    paths-ignore:
+    - 'docs/**'
+    - '.vscode'
+    - 'images/linux/Debian12-Readme.md'
+    - 'images/macos/**'
+    - 'images/win/**'
+    - 'images.CI/linux-and-win/azure-pipelines/windows*'
+    - 'images.CI/macos/**'
+
+jobs:
+  Debian_12:
+    uses: ./.github/workflows/linux-win-generation.yml
+    with:
+      image_name: 'debian12'
+      image_version: '12'
+      image_readme_name: 'Debian12-Readme.md'
+      custom_repo: ${{ github.event.inputs.CUSTOM_REPOSITORY }}
+      custom_repo_commit_hash: ${{ github.event.inputs.CUSTOM_REPOSITORY_COMMIT_HASH }}
+    secrets: inherit

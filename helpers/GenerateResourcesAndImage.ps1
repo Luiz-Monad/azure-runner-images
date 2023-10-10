@@ -1,11 +1,12 @@
 $ErrorActionPreference = 'Stop'
 
 enum ImageType {
-    Windows2019   = 1
-    Windows2022   = 2
-    Ubuntu2004    = 3
-    Ubuntu2204    = 4
+    Windows2019 = 1
+    Windows2022 = 2
+    Ubuntu2004 = 3
+    Ubuntu2204 = 4
     UbuntuMinimal = 5
+    Debian12 = 6
 }
 
 Function Get-PackerTemplatePath {
@@ -31,6 +32,9 @@ Function Get-PackerTemplatePath {
         }
         ([ImageType]::UbuntuMinimal) {
             $relativeTemplatePath = Join-Path "linux" "ubuntuminimal.pkr.hcl"
+        }
+        ([ImageType]::Debian12) {
+            $relativeTemplatePath = Join-Path "linux" "debian12.pkr.hcl"
         }
         default { throw "Unknown type of image" }
     }
@@ -76,9 +80,8 @@ Function GenerateResourcesAndImage {
         .PARAMETER ResourceGroupName
             The name of the resource group to create the Azure resources in.
         .PARAMETER ImageType
-            The type of image to generate. Valid values are: Windows2019, Windows2022, Ubuntu2004, Ubuntu2204, UbuntuMinimal.
-        .PARAMETER ManagedImageName
-            The name of the managed image to create. The default is "Runner-Image-{{ImageType}}".
+            The type of image to generate. Valid values are: Windows2019, Windows2022, Ubuntu2004, Ubuntu2204, UbuntuMinimal, Debian12.
+
         .PARAMETER AzureLocation
             The Azure location where the Azure resources will be created. For example: "East US"
         .PARAMETER ImageGenerationRepositoryRoot
@@ -139,7 +142,7 @@ Function GenerateResourcesAndImage {
         [Parameter(Mandatory = $False)]
         [switch] $ReuseResourceGroup,
         [Parameter(Mandatory = $False)]
-        [ValidateSet("abort", "ask", "cleanup", "run-cleanup-provisioner")]
+        [ValidateSet("abort","ask","cleanup","run-cleanup-provisioner")]
         [string] $OnError = "ask",
         [Parameter(Mandatory = $False)]
         [hashtable] $Tags = @{}
@@ -147,15 +150,15 @@ Function GenerateResourcesAndImage {
 
     if ($Force -and $ReuseResourceGroup) {
         throw "Force and ReuseResourceGroup cannot be used together."
-    }
-    
+        }
+
     Show-LatestCommit -ErrorAction SilentlyContinue
 
     # Validate packer is installed
     $PackerBinary = Get-Command "packer"
     if (-not ($PackerBinary)) {
         throw "'packer' binary is not found on PATH."
-    }
+        }
 
     # Get template path
     $TemplatePath = Get-PackerTemplatePath -RepositoryRoot $ImageGenerationRepositoryRoot -ImageType $ImageType
@@ -199,7 +202,7 @@ Function GenerateResourcesAndImage {
     if ($PSVersionTable.PSVersion.Major -eq 5) {
         Write-Verbose "PowerShell 5 detected. Replacing double quotes with escaped double quotes in tags JSON."
         $TagsJson = $TagsJson -replace '"', '\"'
-    }
+                }
     Write-Debug "Tags JSON: $TagsJson."
     if ($TemplatePath.Contains(".json")) {
         Write-Verbose "Injecting tags into packer template."
@@ -209,8 +212,8 @@ Function GenerateResourcesAndImage {
             $PackerTemplateContent.builders | Add-Member -Name "azure_tags" -Value $Tags -MemberType NoteProperty
             $PackerTemplateContent | ConvertTo-Json -Depth 3 | Out-File -Encoding Ascii $BuilderScriptPathInjected
             $TemplatePath = $BuilderScriptPathInjected
+            }
         }
-    }
 
     $InstallPassword = $env:UserName + [System.GUID]::NewGuid().ToString().ToUpper()
 
@@ -227,31 +230,31 @@ Function GenerateResourcesAndImage {
         "-var=allowed_inbound_ip_addresses=$($AllowedInboundIpAddresses)" `
         "-var=azure_tags=$($TagsJson)" `
         $TemplatePath
-    
+
     if ($LastExitCode -ne 0) {
         throw "Packer template validation failed."
-    }
+        }
 
     try {
         # Login to Azure subscription
         if ([string]::IsNullOrEmpty($AzureClientId)) {
             Write-Verbose "No AzureClientId was provided, will use interactive login."
             az login --output none
-        }
+                }
         else {
             Write-Verbose "AzureClientId was provided, will use service principal login."
             az login --service-principal --username $AzureClientId --password $AzureClientSecret --tenant $AzureTenantId --output none
-        }
+                }
         az account set --subscription $SubscriptionId
         if ($LastExitCode -ne 0) {
             throw "Failed to login to Azure subscription '$SubscriptionId'."
-        }
+            }
 
         # Check resource group
         $ResourceGroupExists = [System.Convert]::ToBoolean((az group exists --name $ResourceGroupName));
         if ($ResourceGroupExists) {
             Write-Verbose "Resource group '$ResourceGroupName' already exists."
-        }
+                }
 
         # Remove resource group if it exists and we are not reusing it
         if ($ResourceGroupExists -and -not $ReuseResourceGroup) {
@@ -270,19 +273,19 @@ Function GenerateResourcesAndImage {
                 # https://stackoverflow.com/questions/9738535/powershell-test-for-noninteractive-mode
                 if ([System.Console]::IsOutputRedirected -or ![Environment]::UserInteractive -or !!([Environment]::GetCommandLineArgs() | Where-Object { $_ -ilike '-noni*' })) {
                     throw "Non-interactive mode, resource group '$ResourceGroupName' already exists, either specify -Force to delete it, or -ReuseResourceGroup to reuse."
-                }
+        }
                 else {
                     # Resource group already exists, ask the user what to do
                     $title = "Resource group '$ResourceGroupName' already exists"
                     $message = "Do you want to delete the resource group and all resources in it?"
-                
+
                     $options = @(
                         [System.Management.Automation.Host.ChoiceDescription]::new("&Yes", "Delete the resource group and all resources in it."),
                         [System.Management.Automation.Host.ChoiceDescription]::new("&No", "Keep the resource group and continue."),
                         [System.Management.Automation.Host.ChoiceDescription]::new("&Abort", "Abort execution.")
                     )
                     $result = $Host.UI.PromptForChoice($title, $message, $options, 0)
-                }
+        }
 
                 switch ($result) {
                     0 {
@@ -291,7 +294,7 @@ Function GenerateResourcesAndImage {
                         az group delete --name $ResourceGroupName --yes
                         if ($LastExitCode -ne 0) {
                             throw "Failed to delete resource group '$ResourceGroupName'."
-                        }
+        }
                         Write-Host "Resource group '$ResourceGroupName' was deleted."
                         $ResourceGroupExists = $false
                     }
@@ -318,7 +321,7 @@ Function GenerateResourcesAndImage {
             }
             if ($LastExitCode -ne 0) {
                 throw "Failed to create resource group '$ResourceGroupName'."
-            }
+        }
         }
 
         # Create service principal
@@ -363,7 +366,7 @@ Function GenerateResourcesAndImage {
 
         if ($LastExitCode -ne 0) {
             throw "Failed to build image."
-        }
+    }
     } catch {
         Write-Error $_
     } finally {
