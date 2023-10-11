@@ -60,38 +60,41 @@ jobs:
 
       - name: Set image variables
         run: |
-          $ImageType = "${{ inputs.image_name }}"
+          $ImageType = "${{ inputs.image_type }}"
+          $ImageName = "${{ inputs.image_name }}"
+          $ImageVersion = "${{ inputs.image_version }}"
+          "ImageName=$ImageName" | Out-File -Append -FilePath $env:GITHUB_ENV
+          "ImageVersion=$ImageVersion" | Out-File -Append -FilePath $env:GITHUB_ENV
 
-          if ($ImageType.StartsWith("ubuntu")) { $TemplateDirectoryName = "linux" } else { $TemplateDirectoryName = "win" }
-
-          $TemplateDirectoryPath = Join-Path "images" $TemplateDirectoryName | Resolve-Path
-          $TemplatePath = Join-Path $TemplateDirectoryPath "$ImageType.pkr.hcl"
-
+          $TemplateDirectoryPath = Join-Path "images" $ImageType | Resolve-Path
+          $TemplatePath = Join-Path $TemplateDirectoryPath "$ImageName.pkr.hcl"
           if ( -not (Test-Path $TemplatePath) ) {
-            $TemplatePath = Join-Path $TemplateDirectoryPath "$ImageType.json"
+            $TemplatePath = Join-Path $TemplateDirectoryPath "$ImageName.json"
           }
-
-          "TemplatePath=$TemplatePath" | Out-File -Append -FilePath $env:GITHUB_ENV
           "TemplateDirectoryPath=$TemplateDirectoryPath" | Out-File -Append -FilePath $env:GITHUB_ENV
-          "ImageType=$ImageType" | Out-File -Append -FilePath $env:GITHUB_ENV
+          "TemplatePath=$TemplatePath" | Out-File -Append -FilePath $env:GITHUB_ENV
+
+          $ManagedImageName = "${{ parameters.image_type }}-$(Build.BuildId)"
+          $TempResourceGroupName = "packer-temp-$ManagedImageName"
+          "TempResourceGroupName=$TempResourceGroupName" | Out-File -Append -FilePath $env:GITHUB_ENV
 
       - name: Build image
         run: |
-            $ResourcesNamePrefix = ${{ github.run_id }} % [System.UInt32]::MaxValue
             ./images.CI/linux-and-win/build-image.ps1 `
-              -TemplatePath ${{ env.TemplatePath }} `
-              -ClientId ${{ secrets.CLIENT_ID }} `
-              -ClientSecret ${{ secrets.CLIENT_SECRET }} `
-              -Location ${{ secrets.AZURE_LOCATION }} `
-              -ResourcesNamePrefix $ResourcesNamePrefix `
-              -ResourceGroup ${{ secrets.AZURE_RESOURCE_GROUP }} `
-              -StorageAccount ${{ secrets.AZURE_STORAGE_ACCOUNT }} `
-              -SubscriptionId ${{ secrets.AZURE_SUBSCRIPTION }} `
-              -TenantId ${{ secrets.AZURE_TENANT }} `
-              -VirtualNetworkName ${{ secrets.BUILD_AGENT_VNET_NAME }} `
-              -VirtualNetworkSubnet ${{ secrets.BUILD_AGENT_SUBNET_NAME }} `
-              -VirtualNetworkRG ${{ secrets.BUILD_AGENT_VNET_RESOURCE_GROUP }} `
-              -SharedImageGallery ${{ secrets.AZURE_SHARED_GALLERY }} `
+              -TemplatePath "${{ env.TemplatePath }}" `
+              -ClientId "${{ secrets.CLIENT_ID }}" `
+              -ClientSecret "${{ secrets.CLIENT_SECRET }}" `
+              -Location "${{ secrets.AZURE_LOCATION }}" `
+              -ImageSharedGallery "${{ secrets.AZURE_SHARED_GALLERY }}" `
+              -ImageName "${{ env.ImageName }}" `
+              -ImageVersion "${{ env.ImageVersion }}" `
+              -ImageResourceGroupName "${{ secrets.AZURE_RESOURCE_GROUP }}" `
+              -TempResourceGroupName "${{ env.TempResourceGroupName }}" `
+              -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION }}" `
+              -TenantId "${{ secrets.AZURE_TENANT }}" `
+              -VirtualNetworkName "${{ secrets.BUILD_AGENT_VNET_NAME }}" `
+              -VirtualNetworkSubnet "${{ secrets.BUILD_AGENT_SUBNET_NAME }}" `
+              -VirtualNetworkRG "${{ secrets.BUILD_AGENT_VNET_RESOURCE_GROUP }}"
         env:
           PACKER_LOG: 1
           PACKER_LOG_PATH: ${{ runner.temp }}/packer-log.txt
@@ -106,11 +109,18 @@ jobs:
         run: |
           Get-Content -Path (Join-Path "$env:TemplateDirectoryPath" "${{ inputs.image_readme_name }}")
 
+      - name: Output Json software report
+        run: |
+          $softwareReportPath = "$env:TemplateDirectoryPath/software-report.json"
+          if (Test-Path $softwareReportPath) {
+              Get-Content -Path $softwareReportPath
+          }
+
       - name: Print provisioners duration
         run: |
           ./images.CI/measure-provisioners-duration.ps1 `
             -PackerLogPath "${{ runner.temp }}/packer-log.txt" `
-            -PrefixToPathTrim ${{ env.TemplateDirectoryPath }} `
+            -PrefixToPathTrim "$env:TemplateDirectoryPath" `
             -PrintTopNLongest 25
 
       - name: Create release for VM deployment
@@ -118,20 +128,20 @@ jobs:
           $BuildId = ${{ github.run_id }} % [System.UInt32]::MaxValue
           ./images.CI/linux-and-win/create-release.ps1 `
             -BuildId $BuildId `
-            -Organization ${{ secrets.RELEASE_TARGET_ORGANIZATION }} `
-            -DefinitionId ${{ secrets.RELEASE_TARGET_DEFINITION_ID }} `
-            -Project ${{ secrets.RELEASE_TARGET_PROJECT }} `
-            -ImageName ${{ env.ImageType }} `
-            -AccessToken ${{ secrets.RELEASE_TARGET_TOKEN }}
+            -Organization "${{ secrets.RELEASE_TARGET_ORGANIZATION }}" `
+            -DefinitionId "${{ secrets.RELEASE_TARGET_DEFINITION_ID }}" `
+            -Project "${{ secrets.RELEASE_TARGET_PROJECT }}" `
+            -AccessToken "${{ secrets.RELEASE_TARGET_TOKEN }}" `
+            -ImageType "${{ env.ImageType }}"
+            -ImageName "${{ env.ImageName }}"
+            -ImageVersion "${{ env.ImageVersion }}"
 
       - name: Clean up resources
         if: ${{ always() }}
         run: |
           ./images.CI/linux-and-win/cleanup.ps1 `
-            -ResourcesNamePrefix ${{ github.run_number }} `
-            -Image ${{ env.ImageType }} `
-            -StorageAccount ${{ secrets.AZURE_STORAGE_ACCOUNT }} `
-            -SubscriptionId ${{ secrets.AZURE_SUBSCRIPTION }} `
-            -ClientId ${{ secrets.CLIENT_ID }} `
-            -ClientSecret ${{ secrets.CLIENT_SECRET }} `
-            -TenantId ${{ secrets.AZURE_TENANT }}
+            -ResourcesNamePrefix "${{ github.run_number }}" `
+            -ClientId "${{ secrets.CLIENT_ID }}" `
+            -ClientSecret "${{ secrets.CLIENT_SECRET }}" `
+            -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION }}" `
+            -TenantId "${{ secrets.AZURE_TENANT }}"

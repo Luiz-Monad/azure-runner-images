@@ -13,8 +13,9 @@ defaults:
 
 jobs:
   Ubuntu_2004:
-    if: contains(github.event.pull_request.labels.*.name, 'CI ubuntu-all') || contains(github.event.pull_request.labels.*.name, 'CI ubuntu-2004')
     uses: ./.github/workflows/linux-win-generation.yml
     with:
-      image_type: 'ubuntu2004'
+      image_type: 'linux'
+      image_name: 'ubuntu2004'
+      image_version: '20.4.0'
     secrets: inherit

@@ -1,12 +1,12 @@
 param(
     [UInt32] [Parameter (Mandatory)] $BuildId,
     [String] [Parameter (Mandatory)] $Organization,
-    [String] [Parameter (Mandatory)] $Project,
-    [String] [Parameter (Mandatory)] $ImageName,
-    [String] [Parameter (Mandatory)] $StorageAccountContainerName,
-    [String] [Parameter (Mandatory)] $VhdName,
     [String] [Parameter (Mandatory)] $DefinitionId,
-    [String] [Parameter (Mandatory)] $AccessToken
+    [String] [Parameter (Mandatory)] $Project,
+    [String] [Parameter (Mandatory)] $AccessToken,
+    [String] [Parameter (Mandatory)] $ImageType,
+    [String] [Parameter (Mandatory)] $ImageName,
+    [String] [Parameter (Mandatory)] $ImageVersion
 )
 
 $Body = @{
@@ -15,14 +15,14 @@ $Body = @{
       ImageBuildId = @{
         value = $BuildId
       }
+      ImageType = @{
+        value = $ImageType
+      }
       ImageName = @{
         value = $ImageName
       }
-      ImageStorageContainerName = @{
-        value = $StorageAccountContainerName
-      }
-      ImageBlobPath = @{
-        value = $VhdName
+      ImageVersion = @{
+        value = $ImageVersion
       }
     }
     isDraft = "false"

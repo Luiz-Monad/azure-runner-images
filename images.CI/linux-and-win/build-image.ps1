@@ -3,6 +3,7 @@ param(
     [String] [Parameter (Mandatory=$true)] $ClientId,
     [String] [Parameter (Mandatory=$true)] $ClientSecret,
     [String] [Parameter (Mandatory=$true)] $Location,
+    [String] [Parameter (Mandatory=$true)] $ImageSharedGallery,
     [String] [Parameter (Mandatory=$true)] $ImageName,
     [String] [Parameter (Mandatory=$true)] $ImageVersion,
     [String] [Parameter (Mandatory=$true)] $ImageResourceGroupName,
@@ -10,9 +11,8 @@ param(
     [String] [Parameter (Mandatory=$true)] $SubscriptionId,
     [String] [Parameter (Mandatory=$true)] $TenantId,
     [String] [Parameter (Mandatory=$false)] $VirtualNetworkName,
-    [String] [Parameter (Mandatory=$false)] $VirtualNetworkRG,
     [String] [Parameter (Mandatory=$false)] $VirtualNetworkSubnet,
-    [String] [Parameter (Mandatory=$false)] $SharedImageGallery
+    [String] [Parameter (Mandatory=$false)] $VirtualNetworkRG
 )
 
 if (-not (Test-Path $TemplatePath))
@@ -42,9 +42,8 @@ packer --version
 Write-Host "Build $ImageTemplateName VM"
 packer build    -var "client_id=$ClientId" `
                 -var "client_secret=$ClientSecret" `
-                -var "install_password=$InstallPassword" `
                 -var "location=$Location" `
-                -var "image_gallery=$SharedImageGallery" `
+                -var "image_shared_gallery=$ImageSharedGallery" `
                 -var "image_name=$ImageName" `
                 -var "image_version=$ImageVersion" `
                 -var "image_resource_group_name=$ImageResourceGroupName" `
@@ -52,9 +51,10 @@ packer build    -var "client_id=$ClientId" `
                 -var "subscription_id=$SubscriptionId" `
                 -var "tenant_id=$TenantId" `
                 -var "virtual_network_name=$VirtualNetworkName" `
-                -var "virtual_network_resource_group_name=$VirtualNetworkRG" `
                 -var "virtual_network_subnet_name=$VirtualNetworkSubnet" `
+                -var "virtual_network_resource_group_name=$VirtualNetworkRG" `
                 -var "run_validation_diskspace=$env:RUN_VALIDATION_FLAG" `
+                -var "install_password=$InstallPassword" `
                 -color=false `
                 $TemplatePath `
         | Where-Object {

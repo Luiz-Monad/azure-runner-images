@@ -16,5 +16,7 @@ pr:
 jobs:
 - template: image-generation.yml
   parameters:
-    image_type: ubuntu2004
+    image_type: 'linux'
+    image_name: 'ubuntu2004'
+    image_version: '20.4.0'
     image_readme_name: Ubuntu2004-Readme.md

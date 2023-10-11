@@ -14,7 +14,7 @@ variable "build_resource_group_name" {
   default = "${env("BUILD_RESOURCE_GROUP_NAME")}"
 }
 
-variable "image_gallery" {
+variable "image_shared_gallery" {
   type    = string
   default = "test"
 }
@@ -37,6 +37,11 @@ variable "image_os" {
 variable "image_resource_group_name" {
   type    = string
   default = "${env("ARM_RESOURCE_GROUP")}"
+}
+
+variable "temp_resource_group_name" {
+  type    = string
+  default = "${env("TEMP_RESOURCE_GROUP_NAME")}"
 }
 
 variable "client_id" {
@@ -115,11 +120,6 @@ variable "subscription_id" {
   default = "${env("ARM_SUBSCRIPTION_ID")}"
 }
 
-variable "temp_resource_group_name" {
-  type    = string
-  default = "${env("TEMP_RESOURCE_GROUP_NAME")}"
-}
-
 variable "tenant_id" {
   type    = string
   default = "${env("ARM_TENANT_ID")}"
@@ -130,14 +130,14 @@ variable "virtual_network_name" {
   default = "${env("VNET_NAME")}"
 }
 
-variable "virtual_network_resource_group_name" {
-  type    = string
-  default = "${env("VNET_RESOURCE_GROUP")}"
-}
-
 variable "virtual_network_subnet_name" {
   type    = string
   default = "${env("VNET_SUBNET")}"
+}
+
+variable "virtual_network_resource_group_name" {
+  type    = string
+  default = "${env("VNET_RESOURCE_GROUP")}"
 }
 
 variable "vm_size" {
@@ -156,7 +156,7 @@ source "azure-arm" "build_image" {
   shared_image_gallery_destination {
       subscription                       = "${var.subscription_id}"
       resource_group                     = "${var.image_resource_group_name}"
-      gallery_name                       = "${var.image_gallery}"
+      gallery_name                       = "${var.image_shared_gallery}"
       image_name                         = "${var.image_name}"
       image_version                      = "${var.image_version}"
       storage_account_type               = "${var.storage_type}"

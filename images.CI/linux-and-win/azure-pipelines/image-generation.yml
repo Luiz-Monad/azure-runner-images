@@ -62,21 +62,20 @@ jobs:
       targetType: 'inline'
       script: |
         $ImageType = "${{ parameters.image_type }}"
-        $TemplateDirectoryName = if ($ImageType.StartsWith("ubuntu")) { "linux" } else { "win" }
-        $TemplateDirectoryPath = Join-Path "images" $TemplateDirectoryName | Resolve-Path
-        $TemplatePath = Join-Path $TemplateDirectoryPath "$ImageType.pkr.hcl"
+        $ImageName = "${{ parameters.image_name }}"
+        $ImageVersion = "${{ parameters.image_version }}"
+        Write-Host "##vso[task.setvariable variable=ImageName;]$ImageName"
+        Write-Host "##vso[task.setvariable variable=ImageVersion;]$ImageVersion"
+
+        $TemplateDirectoryPath = Join-Path "images" $ImageType | Resolve-Path
+        $TemplatePath = Join-Path $TemplateDirectoryPath "$ImageName.pkr.hcl"
         if ( -not (Test-Path $TemplatePath) ) {
-            $TemplatePath = Join-Path $TemplateDirectoryPath "$ImageType.json"
+            $TemplatePath = Join-Path $TemplateDirectoryPath "$ImageName.json"
         }
         Write-Host "##vso[task.setvariable variable=TemplateDirectoryPath;]$TemplateDirectoryPath"
         Write-Host "##vso[task.setvariable variable=TemplatePath;]$TemplatePath"
 
         $ManagedImageName = "${{ parameters.image_type }}-$(Build.BuildId)"
-        Write-Host "##vso[task.setvariable variable=ManagedImageName;]$ManagedImageName"
-
-        $VhdName = "$ManagedImageName.vhd"
-        Write-Host "##vso[task.setvariable variable=VhdName;]$VhdName"
-
         $TempResourceGroupName = "packer-temp-$ManagedImageName"
         Write-Host "##vso[task.setvariable variable=TempResourceGroupName;]$TempResourceGroupName"
 
@@ -85,18 +84,20 @@ jobs:
     inputs:
       targetType: filePath
       filePath: ./images.CI/linux-and-win/build-image.ps1
-      arguments: -ClientId $(CLIENT_ID) `
-                 -ClientSecret $(CLIENT_SECRET) `
-                 -TemplatePath $(TemplatePath) `
-                 -ImageName "$(ManagedImageName)" `
-                 -ImageResourceGroupName $(AZURE_RESOURCE_GROUP) `
+      arguments: -TemplatePath "$(TemplatePath)" `
+                 -ClientId "$(CLIENT_ID)" `
+                 -ClientSecret "$(CLIENT_SECRET)" `
+                 -Location "$(AZURE_LOCATION)" `
+                 -ImageSharedGallery "$(AZURE_SHARED_GALLERY)" `
+                 -ImageName "$(ImageName)" `
+                 -ImageVersion "$(ImageVersion)" `
+                 -ImageResourceGroupName "$(AZURE_RESOURCE_GROUP)" `
                  -TempResourceGroupName "$(TempResourceGroupName)" `
-                 -SubscriptionId $(AZURE_SUBSCRIPTION) `
-                 -TenantId $(AZURE_TENANT) `
-                 -Location $(AZURE_LOCATION) `
-                 -VirtualNetworkName $(BUILD_AGENT_VNET_NAME) `
-                 -VirtualNetworkRG $(BUILD_AGENT_VNET_RESOURCE_GROUP) `
-                 -VirtualNetworkSubnet $(BUILD_AGENT_SUBNET_NAME)
+                 -SubscriptionId "$(AZURE_SUBSCRIPTION)" `
+                 -TenantId "$(AZURE_TENANT)" `
+                 -VirtualNetworkName "$(BUILD_AGENT_VNET_NAME)" `
+                 -VirtualNetworkSubnet "$(BUILD_AGENT_SUBNET_NAME)" `
+                 -VirtualNetworkRG "$(BUILD_AGENT_VNET_RESOURCE_GROUP)"
 
     env:
       PACKER_LOG: 1
@@ -107,16 +108,25 @@ jobs:
     inputs:
       targetType: 'inline'
       script: |
+        $packerLogPath = "$(Agent.TempDirectory)/packer-log.txt" 
         $readmePath = Join-Path "$(TemplateDirectoryPath)" "${{ parameters.image_readme_name }}"
         $softwareReportPath = Join-Path "$(TemplateDirectoryPath)" "software-report.json"
 
+        Copy-Item -Path $packerLogPath -Destination "$(Build.ArtifactStagingDirectory)/"
         Copy-Item -Path $readmePath -Destination "$(Build.ArtifactStagingDirectory)/"
         if (Test-Path $softwareReportPath) {
             Copy-Item -Path $softwareReportPath -Destination "$(Build.ArtifactStagingDirectory)/"
         }
 
   - task: PowerShell@2
-    displayName: 'Print markdown software report'
+    displayName: 'Print packer log'
+    inputs:
+      targetType: 'inline'
+      script: |
+        Get-Content -Path "$(Build.ArtifactStagingDirectory)/packer-log.txt"
+
+  - task: PowerShell@2
+    displayName: 'Print readme file content'
     inputs:
       targetType: 'inline'
       script: |
@@ -143,28 +153,8 @@ jobs:
       targetType: 'filePath'
       filePath: ./images.CI/measure-provisioners-duration.ps1
       arguments: -PackerLogPath "$(Agent.TempDirectory)/packer-log.txt" `
-                        -PrefixToPathTrim "$(TemplateDirectoryPath)" `
-                        -PrintTopNLongest 25
-
-  - task: PowerShell@2
-    displayName: 'Convert managed image to VHD'
-    inputs:
-      targetType: filePath
-      filePath: ./images.CI/linux-and-win/convert-to-vhd.ps1
-      arguments: -SubscriptionId $(AZURE_SUBSCRIPTION) `
-                 -Location $(AZURE_LOCATION) `
-                 -ResourceGroupName $(AZURE_RESOURCE_GROUP) `
-                 -ManagedImageName "$(ManagedImageName)" `
-                 -GalleryName "github_imagegeneration_convert_to_vhd" `
-                 -GalleryImageSku "${{ parameters.image_type }}" `
-                 -GalleryImageVersion "0.0.$(Build.BuildId)" `
-                 -StorageAccountName $(AZURE_STORAGE_ACCOUNT) `
-                 -StorageAccountContainerName "images" `
-                 -VhdName "$(VhdName)" `
-                 -ClientId $(CLIENT_ID) `
-                 -ClientSecret $(CLIENT_SECRET) `
-                 -TenantId $(AZURE_TENANT) `
-                 -RemoveManagedImage
+                 -PrefixToPathTrim "$(TemplateDirectoryPath)" `
+                 -PrintTopNLongest 25
 
   - ${{ if eq(parameters.create_release, true) }}:
     - task: PowerShell@2
@@ -172,14 +162,14 @@ jobs:
       inputs:
         targetType: filePath
         filePath: ./images.CI/linux-and-win/create-release.ps1
-        arguments: -BuildId $(Build.BuildId) `
-                   -Organization $(RELEASE_TARGET_ORGANIZATION) `
-                   -DefinitionId $(RELEASE_TARGET_DEFINITION_ID) `
-                   -Project $(RELEASE_TARGET_PROJECT) `
-                   -ImageName "${{ parameters.image_type }}" `
-                   -StorageAccountContainerName "images" `
-                   -VhdName "$(VhdName)" `
-                   -AccessToken $(RELEASE_TARGET_TOKEN)
+        arguments: -BuildId "$(Build.BuildId)" `
+                   -Organization "$(RELEASE_TARGET_ORGANIZATION)" `
+                   -DefinitionId "$(RELEASE_TARGET_DEFINITION_ID)" `
+                   -Project "$(RELEASE_TARGET_PROJECT)" `
+                   -AccessToken "$(RELEASE_TARGET_TOKEN)" `
+                   -ImageType "${{ parameters.image_type }}" `
+                   -ImageName "${{ parameters.image_name }}" `
+                   -ImageVersion "${{ parameters.image_version }}"
 
   - task: PowerShell@2
     displayName: 'Clean up resources'
@@ -188,8 +178,7 @@ jobs:
       targetType: filePath
       filePath: ./images.CI/linux-and-win/cleanup.ps1
       arguments: -TempResourceGroupName "$(TempResourceGroupName)" `
-                 -StorageAccount $(AZURE_STORAGE_ACCOUNT) `
-                 -SubscriptionId $(AZURE_SUBSCRIPTION) `
-                 -ClientId $(CLIENT_ID) `
-                 -ClientSecret $(CLIENT_SECRET) `
-                 -TenantId $(AZURE_TENANT)
+                 -ClientId "$(CLIENT_ID)" `
+                 -ClientSecret "$(CLIENT_SECRET)" `
+                 -SubscriptionId "$(AZURE_SUBSCRIPTION)" `
+                 -TenantId "$(AZURE_TENANT)"

@@ -17,5 +17,7 @@ jobs:
   Ubuntu_2204:
     uses: ./.github/workflows/linux-win-generation.yml
     with:
-      image_type: 'ubuntu2204'
+      image_type: 'linux'
+      image_name: 'ubuntu2204'
+      image_version: '22.4.0'
     secrets: inherit
