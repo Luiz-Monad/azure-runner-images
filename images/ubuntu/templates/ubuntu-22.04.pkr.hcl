@@ -216,7 +216,7 @@ build {
   provisioner "shell" {
     environment_vars = ["NGROK_TOKEN=${var.ngrok_token}", "NGROK_SSH_PUBKEY=${var.ngrok_ssh_pubkey}"]
     execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = ["${path.root}/scripts/helpers/debug.sh"]
+    script           = "${path.root}/../scripts/helpers/debug.sh"
   }
 
   provisioner "shell" {

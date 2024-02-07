@@ -56,27 +56,27 @@ packer validate -syntax-only $TemplatePath
 
 Write-Host "Build $ImageName ($ImageVersion) VM"
 packer build `
-                -var "location=$Location" `
-                -var "tenant_id=$TenantId" `
-                -var "subscription_id=$SubscriptionId" `
-                -var "client_id=$ClientId" `
-                -var "client_secret=$ClientSecret" `
-                -var "image_resource_group_name=$ImageResourceGroupName" `
-                -var "image_gallery=$ImageGallery" `
-                -var "image_name=$ImageName" `
-                -var "image_version=$ImageVersion" `
-                -var "temp_resource_group_name=$TempResourceGroupName" `
-                -var "virtual_network_resource_group_name=$VirtualNetworkRG" `
-                -var "virtual_network_name=$VirtualNetworkName" `
-                -var "virtual_network_subnet_name=$VirtualNetworkSubnet" `
-                -var "install_password=$InstallPassword" `
-                -var "ngrok_token=$($NgrokToken | ConvertTo-Base64)" `
-                -var "ngrok_ssh_pubkey=$($NgrokSSHPubKey | ConvertTo-Base64)"
-                -color=false `
-                $TemplatePath `
-        | Where-Object {
-            #Filter sensitive data from Packer logs
-            $currentString = $_
-            $sensitiveString = $SensitiveData | Where-Object { $currentString -match $_ }
-            $sensitiveString -eq $null
-        }
+            -var "location=$Location" `
+            -var "tenant_id=$TenantId" `
+            -var "subscription_id=$SubscriptionId" `
+            -var "client_id=$ClientId" `
+            -var "client_secret=$ClientSecret" `
+            -var "image_resource_group_name=$ImageResourceGroupName" `
+            -var "image_gallery=$ImageGallery" `
+            -var "image_name=$ImageName" `
+            -var "image_version=$ImageVersion" `
+            -var "temp_resource_group_name=$TempResourceGroupName" `
+            -var "virtual_network_resource_group_name=$VirtualNetworkRG" `
+            -var "virtual_network_name=$VirtualNetworkName" `
+            -var "virtual_network_subnet_name=$VirtualNetworkSubnet" `
+            -var "install_password=$InstallPassword" `
+            -var "ngrok_token=$($NgrokToken | ConvertTo-Base64)" `
+            -var "ngrok_ssh_pubkey=$($NgrokSSHPubKey | ConvertTo-Base64)" `
+            --color=false `
+            $TemplatePath `
+    | Where-Object {
+        #Filter sensitive data from Packer logs
+        $currentString = $_
+        $sensitiveString = $SensitiveData | Where-Object { $currentString -match $_ }
+        $sensitiveString -eq $null
+    }
