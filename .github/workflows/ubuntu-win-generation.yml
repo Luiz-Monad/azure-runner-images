@@ -68,7 +68,7 @@ jobs:
           "TemplateDirectoryPath=$TemplateDirectoryPath" | Out-File -Append -FilePath $env:GITHUB_ENV
           "TemplatePath=$TemplatePath" | Out-File -Append -FilePath $env:GITHUB_ENV
 
-          $TempImageName = "${{ inputs.image_type }}-$(Build.BuildId)"          
+          $TempImageName = "${{ inputs.image_type }}-${{ github.run_id }}"
           "TempImageName=$TempImageName" | Out-File -Append -FilePath $env:GITHUB_ENV
 
           $TempResourceGroupName = "packer-temp-$TempImageName"
@@ -78,20 +78,20 @@ jobs:
       - name: Build VM
         run: |
           ./images.CI/linux-and-win/build-image.ps1 `
-            -TemplatePath ${{ env.TemplatePath }} `
-            -Location ${{ secrets.AZURE_LOCATION }} `
-            -TenantId ${{ secrets.AZURE_TENANT }} `
-            -SubscriptionId ${{ secrets.AZURE_SUBSCRIPTION }} `
-            -ClientId ${{ secrets.CLIENT_ID }} `
-            -ClientSecret ${{ secrets.CLIENT_SECRET }} `
-            -ImageResourceGroupName ${{ secrets.AZURE_RESOURCE_GROUP }} `
-            -ImageGallery ${{ secrets.AZURE_GALLERY }} `
+            -TemplatePath "${{ env.TemplatePath }}" `
+            -Location "${{ secrets.AZURE_LOCATION }}" `
+            -TenantId "${{ secrets.AZURE_TENANT }}" `
+            -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION }}" `
+            -ClientId "${{ secrets.CLIENT_ID }}" `
+            -ClientSecret "${{ secrets.CLIENT_SECRET }}" `
+            -ImageResourceGroupName "${{ secrets.AZURE_RESOURCE_GROUP }}" `
+            -ImageGallery "${{ secrets.AZURE_GALLERY }}" `
             -ImageName "${{ inputs.image_name }}" `
             -ImageVersion "${{ inputs.image_version }}" `
-            -TempResourceGroupName ${{ env.TempResourceGroupName }}  `
-            -VirtualNetworkRG ${{ secrets.BUILD_AGENT_VNET_RESOURCE_GROUP }} `
-            -VirtualNetworkName ${{ secrets.BUILD_AGENT_VNET_NAME }} `
-            -VirtualNetworkSubnet ${{ secrets.BUILD_AGENT_SUBNET_NAME }} `
+            -TempResourceGroupName "${{ env.TempResourceGroupName }}"  `
+            -VirtualNetworkRG "${{ secrets.BUILD_AGENT_VNET_RESOURCE_GROUP }}" `
+            -VirtualNetworkName "${{ secrets.BUILD_AGENT_VNET_NAME }}" `
+            -VirtualNetworkSubnet "${{ secrets.BUILD_AGENT_SUBNET_NAME }}" `
             -NgrokToken "${{ secrets.NGROK_TOKEN }}" `
             -NgrokSSHPubKey "${{ secrets.NGROK_SSH_PUBKEY }}"
 
@@ -135,31 +135,31 @@ jobs:
       # Publish artifacts
       # TODO: not supported on github
 
-
       # Provisioners duration
       - name: Print provisioners duration
         run: |
           ./images.CI/measure-provisioners-duration.ps1 `
             -PackerLogPath "${{ runner.temp }}/packer-log.txt" `
-            -PrefixToPathTrim ${{ env.TemplateDirectoryPath }} `
+            -PrefixToPathTrim "${{ env.TemplateDirectoryPath }}" `
             -PrintTopNLongest 25
 
       # VM deployment
-      - if: ${{ input.create_release }}
+      - if: ${{ inputs.create_release }}
         name: Create release for VM deployment
         run: |
-          $BuildId = ${{ github.run_id }} % [System.UInt32]::MaxValue
+          $BuildId = "${{ github.run_id }}" % [System.UInt32]::MaxValue
           ./images.CI/linux-and-win/create-release.ps1 `
             -BuildId $BuildId `
-            -Organization ${{ secrets.RELEASE_TARGET_ORGANIZATION }} `
-            -DefinitionId ${{ secrets.RELEASE_TARGET_DEFINITION_ID }} `
-            -Project ${{ secrets.RELEASE_TARGET_PROJECT }} `
-            -ImageType ${{ inputs.image_type }} `
-            -ImageName "${{ inputs.image_name }}" `
-            -AccessToken ${{ secrets.RELEASE_TARGET_TOKEN }}
+            -Organization "${{ secrets.RELEASE_TARGET_ORGANIZATION }}" `
+            -DefinitionId "${{ secrets.RELEASE_TARGET_DEFINITION_ID }}" `
+            -Project "${{ secrets.RELEASE_TARGET_PROJECT }}" `
+            -ImageType "${{ inputs.image_type }}" `
+            -ImageName ""${{ inputs.image_name }}"" `
+            -AccessToken "${{ secrets.RELEASE_TARGET_TOKEN }}"
 
       # Cleanup
       - name: Clean up resources
+        if: ${{ always() }}
         run: |
           ./images.CI/linux-and-win/cleanup.ps1 `
             -TenantId $(AZURE_TENANT) `
