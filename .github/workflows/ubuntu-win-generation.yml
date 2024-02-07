@@ -122,7 +122,10 @@ jobs:
       # Markdown report
       - name: Print markdown software report
         run: |
-          Get-Content -Path "${{ runner.temp }}/${{ inputs.image_readme_name }}"
+          $softwareReportPath = "${{ runner.temp }}/software-report.md"
+          if (Test-Path $softwareReportPath) {
+              Get-Content -Path $softwareReportPath
+          }
 
       # Json report
       - name: Print json software report
@@ -162,8 +165,8 @@ jobs:
         if: ${{ always() }}
         run: |
           ./images.CI/linux-and-win/cleanup.ps1 `
-            -TenantId $(AZURE_TENANT) `
-            -SubscriptionId $(AZURE_SUBSCRIPTION) `
-            -ClientId $(CLIENT_ID) `
-            -ClientSecret $(CLIENT_SECRET) `
+            -TenantId "${{ secrets.AZURE_TENANT }}" `
+            -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION }}" `
+            -ClientId "${{ secrets.CLIENT_ID }}" `
+            -ClientSecret "${{ secrets.CLIENT_SECRET }}" `
             -TempResourceGroupName "${{ env.TempResourceGroupName }}"
