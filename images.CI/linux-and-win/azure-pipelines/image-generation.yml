@@ -153,7 +153,10 @@ jobs:
     inputs:
       targetType: 'inline'
       script: |
-        Get-Content -Path "$(Build.ArtifactStagingDirectory)/${{ parameters.image_readme_name }}"
+        $softwareReportPath = "$(Build.ArtifactStagingDirectory)/software-report.md"
+        if (Test-Path $softwareReportPath) {
+            Get-Content -Path $softwareReportPath
+        }
 
   # Json report
   - task: PowerShell@2
