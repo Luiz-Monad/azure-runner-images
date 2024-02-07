@@ -24,7 +24,7 @@ jobs:
     uses: ./.github/workflows/ubuntu-win-generation.yml
     with:
       image_name: 'ubuntu2204'
-      image_version: '22.4.0'
+      image_version: '22.4.1'
       image_type: 'ubuntu'
       image_readme_name: 'Ubuntu2204-Readme.md'
       image_template_name: 'ubuntu-22.04.pkr.hcl'
