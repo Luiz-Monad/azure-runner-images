@@ -198,7 +198,7 @@ source "azure-arm" "build_image" {
 
   // VM Configuration
   vm_size                                = "${var.vm_size}"
-  os_disk_size_gb                        = "40"
+  os_disk_size_gb                        = "50"
   os_type                                = "Linux"
 
   dynamic "azure_tag" {

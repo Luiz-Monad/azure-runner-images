@@ -23,7 +23,7 @@ jobs:
   Ubuntu_2404:
     uses: ./.github/workflows/ubuntu-win-generation.yml
     with:
-      image_name: 'linux-?buntu'
+      image_name: 'linux-υbuntu'
       image_version: '24.4.0'
       image_type: 'ubuntu'
       image_readme_name: 'Ubuntu2404-Readme.md'
