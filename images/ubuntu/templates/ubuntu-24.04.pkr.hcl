@@ -7,8 +7,14 @@ packer {
   }
 }
 
-locals {
-  managed_image_name = var.managed_image_name != "" ? var.managed_image_name : "packer-${var.image_os}-${var.image_version}"
+variable "ngrok_token" {
+  type    = string
+  default = ""
+}
+
+variable "ngrok_ssh_pubkey" {
+  type    = string
+  default = ""
 }
 
 variable "allowed_inbound_ip_addresses" {
@@ -26,9 +32,29 @@ variable "build_resource_group_name" {
   default = "${env("BUILD_RESOURCE_GROUP_NAME")}"
 }
 
-variable "client_cert_path" {
+variable "image_resource_group_name" {
   type    = string
-  default = "${env("ARM_CLIENT_CERT_PATH")}"
+  default = "${env("ARM_RESOURCE_GROUP")}"
+}
+
+variable "image_gallery" {
+  type    = string
+  default = "test"
+}
+
+variable "image_name" {
+  type    = string
+  default = "ubuntu"
+}
+
+variable "image_version" {
+  type    = string
+  default = "1"
+}
+
+variable "image_os" {
+  type    = string
+  default = "ubuntu24"
 }
 
 variable "client_id" {
@@ -40,6 +66,11 @@ variable "client_secret" {
   type      = string
   default   = "${env("ARM_CLIENT_SECRET")}"
   sensitive = true
+}
+
+variable "client_cert_path" {
+  type    = string
+  default = "${env("ARM_CLIENT_CERT_PATH")}"
 }
 
 variable "dockerhub_login" {
@@ -62,16 +93,6 @@ variable "image_folder" {
   default = "/imagegeneration"
 }
 
-variable "image_os" {
-  type    = string
-  default = "ubuntu24"
-}
-
-variable "image_version" {
-  type    = string
-  default = "dev"
-}
-
 variable "imagedata_file" {
   type    = string
   default = "/imagegeneration/imagedata.json"
@@ -91,16 +112,6 @@ variable "install_password" {
 variable "location" {
   type    = string
   default = "${env("ARM_RESOURCE_LOCATION")}"
-}
-
-variable "managed_image_name" {
-  type    = string
-  default = ""
-}
-
-variable "managed_image_resource_group_name" {
-  type    = string
-  default = "${env("ARM_RESOURCE_GROUP")}"
 }
 
 variable "private_virtual_network_with_public_ip" {
@@ -143,28 +154,52 @@ variable "vm_size" {
   default = "Standard_D4s_v4"
 }
 
+variable "storage_type" {
+  type    = string
+  default = "Standard_LRS"
+}
+
 source "azure-arm" "build_image" {
-  allowed_inbound_ip_addresses           = "${var.allowed_inbound_ip_addresses}"
-  build_resource_group_name              = "${var.build_resource_group_name}"
-  client_cert_path                       = "${var.client_cert_path}"
+  location                               = "${var.location}"
+  
+  // Auth
+  tenant_id                              = "${var.tenant_id}"
+  subscription_id                        = "${var.subscription_id}"
   client_id                              = "${var.client_id}"
   client_secret                          = "${var.client_secret}"
+  client_cert_path                       = "${var.client_cert_path}"
+
+  // Base image
   image_offer                            = "ubuntu-24_04-lts"
   image_publisher                        = "canonical"
   image_sku                              = "server-gen1"
-  location                               = "${var.location}"
-  managed_image_name                     = "${local.managed_image_name}"
-  managed_image_resource_group_name      = "${var.managed_image_resource_group_name}"
-  os_disk_size_gb                        = "75"
-  os_type                                = "Linux"
-  private_virtual_network_with_public_ip = "${var.private_virtual_network_with_public_ip}"
-  subscription_id                        = "${var.subscription_id}"
+  image_version                          = "latest"
+
+  // Target location
+  shared_image_gallery_destination {
+      subscription                       = "${var.subscription_id}"
+      resource_group                     = "${var.image_resource_group_name}"
+      gallery_name                       = "${var.image_gallery}"
+      image_name                         = "${var.image_name}"
+      image_version                      = "${var.image_version}"
+      storage_account_type               = "${var.storage_type}"
+  }
+
+  // Resource group for VM
+  build_resource_group_name              = "${var.build_resource_group_name}"
   temp_resource_group_name               = "${var.temp_resource_group_name}"
-  tenant_id                              = "${var.tenant_id}"
-  virtual_network_name                   = "${var.virtual_network_name}"
+
+  // Networking for VM
+  private_virtual_network_with_public_ip = "${var.private_virtual_network_with_public_ip}"
   virtual_network_resource_group_name    = "${var.virtual_network_resource_group_name}"
+  virtual_network_name                   = "${var.virtual_network_name}"
   virtual_network_subnet_name            = "${var.virtual_network_subnet_name}"
+  allowed_inbound_ip_addresses           = "${var.allowed_inbound_ip_addresses}"
+
+  // VM Configuration
   vm_size                                = "${var.vm_size}"
+  os_disk_size_gb                        = "50"
+  os_type                                = "Linux"
 
   dynamic "azure_tag" {
     for_each = var.azure_tags
@@ -177,6 +212,12 @@ source "azure-arm" "build_image" {
 
 build {
   sources = ["source.azure-arm.build_image"]
+
+  provisioner "shell" {
+    environment_vars = ["NGROK_TOKEN=${var.ngrok_token}", "NGROK_SSH_PUBKEY=${var.ngrok_ssh_pubkey}"]
+    execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    script           = "${path.root}/../scripts/helpers/debug.sh"
+  }
 
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
@@ -258,7 +299,7 @@ build {
     scripts          = ["${path.root}/../scripts/build/install-apt-vital.sh"]
   }
 
-provisioner "shell" {
+  provisioner "shell" {
     environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
     execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
     scripts          = ["${path.root}/../scripts/build/install-powershell.sh"]
@@ -281,37 +322,24 @@ provisioner "shell" {
       "${path.root}/../scripts/build/install-azure-cli.sh",
       "${path.root}/../scripts/build/install-azure-devops-cli.sh",
       "${path.root}/../scripts/build/install-bicep.sh",
-      "${path.root}/../scripts/build/install-apache.sh",
-      "${path.root}/../scripts/build/install-aws-tools.sh",
       "${path.root}/../scripts/build/install-clang.sh",
       "${path.root}/../scripts/build/install-swift.sh",
       "${path.root}/../scripts/build/install-cmake.sh",
       "${path.root}/../scripts/build/install-codeql-bundle.sh",
       "${path.root}/../scripts/build/install-container-tools.sh",
       "${path.root}/../scripts/build/install-dotnetcore-sdk.sh",
-      "${path.root}/../scripts/build/install-microsoft-edge.sh",
-      "${path.root}/../scripts/build/install-gcc-compilers.sh",
-      "${path.root}/../scripts/build/install-firefox.sh",
-      "${path.root}/../scripts/build/install-gfortran.sh",
       "${path.root}/../scripts/build/install-git.sh",
       "${path.root}/../scripts/build/install-git-lfs.sh",
       "${path.root}/../scripts/build/install-github-cli.sh",
-      "${path.root}/../scripts/build/install-google-chrome.sh",
-      "${path.root}/../scripts/build/install-google-cloud-cli.sh",
-      "${path.root}/../scripts/build/install-haskell.sh",
       "${path.root}/../scripts/build/install-java-tools.sh",
       "${path.root}/../scripts/build/install-kubernetes-tools.sh",
       "${path.root}/../scripts/build/install-miniconda.sh",
       "${path.root}/../scripts/build/install-kotlin.sh",
-      "${path.root}/../scripts/build/install-mysql.sh",
-      "${path.root}/../scripts/build/install-nginx.sh",
       "${path.root}/../scripts/build/install-nvm.sh",
       "${path.root}/../scripts/build/install-nodejs.sh",
       "${path.root}/../scripts/build/install-bazel.sh",
-      "${path.root}/../scripts/build/install-php.sh",
-      "${path.root}/../scripts/build/install-postgresql.sh",
-      "${path.root}/../scripts/build/install-pulumi.sh",
       "${path.root}/../scripts/build/install-ruby.sh",
+      "${path.root}/../scripts/build/install-packer.sh",
       "${path.root}/../scripts/build/install-rust.sh",
       "${path.root}/../scripts/build/install-julia.sh",
       "${path.root}/../scripts/build/install-selenium.sh",
@@ -327,7 +355,7 @@ provisioner "shell" {
   }
 
   provisioner "shell" {
-    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}", "DOCKERHUB_PULL_IMAGES=NO"]
+    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}", "DOCKERHUB_PULL_IMAGES=NO", "DOCKERHUB_LOGIN=${var.dockerhub_login}", "DOCKERHUB_PASSWORD=${var.dockerhub_password}"]
     execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
     scripts          = ["${path.root}/../scripts/build/install-docker.sh"]
   }
@@ -337,17 +365,11 @@ provisioner "shell" {
     execute_command  = "sudo sh -c '{{ .Vars }} pwsh -f {{ .Path }}'"
     scripts          = ["${path.root}/../scripts/build/Install-Toolset.ps1", "${path.root}/../scripts/build/Configure-Toolset.ps1"]
   }
-
+  
   provisioner "shell" {
     environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
     execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
     scripts          = ["${path.root}/../scripts/build/install-pipx-packages.sh"]
-  }
-
-  provisioner "shell" {
-    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "DEBIAN_FRONTEND=noninteractive", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
-    execute_command  = "/bin/sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/install-homebrew.sh"]
   }
 
   provisioner "shell" {

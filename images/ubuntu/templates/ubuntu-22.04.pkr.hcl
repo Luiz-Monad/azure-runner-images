@@ -322,6 +322,9 @@ build {
       "${path.root}/../scripts/build/install-azure-cli.sh",
       "${path.root}/../scripts/build/install-azure-devops-cli.sh",
       "${path.root}/../scripts/build/install-bicep.sh",
+      "${path.root}/../scripts/build/install-clang.sh",
+      "${path.root}/../scripts/build/install-swift.sh",
+      "${path.root}/../scripts/build/install-cmake.sh",
       "${path.root}/../scripts/build/install-codeql-bundle.sh",
       "${path.root}/../scripts/build/install-container-tools.sh",
       "${path.root}/../scripts/build/install-dotnetcore-sdk.sh",
@@ -332,11 +335,19 @@ build {
       "${path.root}/../scripts/build/install-kubernetes-tools.sh",
       "${path.root}/../scripts/build/install-miniconda.sh",
       "${path.root}/../scripts/build/install-kotlin.sh",
+      "${path.root}/../scripts/build/install-nvm.sh",
       "${path.root}/../scripts/build/install-nodejs.sh",
+      "${path.root}/../scripts/build/install-bazel.sh",
       "${path.root}/../scripts/build/install-ruby.sh",
       "${path.root}/../scripts/build/install-packer.sh",
+      "${path.root}/../scripts/build/install-rust.sh",
+      "${path.root}/../scripts/build/install-julia.sh",
+      "${path.root}/../scripts/build/install-selenium.sh",
+      "${path.root}/../scripts/build/install-packer.sh",
+      "${path.root}/../scripts/build/install-vcpkg.sh",
       "${path.root}/../scripts/build/configure-dpkg.sh",
       "${path.root}/../scripts/build/install-yq.sh",
+      "${path.root}/../scripts/build/install-android-sdk.sh",
       "${path.root}/../scripts/build/install-pypy.sh",
       "${path.root}/../scripts/build/install-python.sh",
       "${path.root}/../scripts/build/install-zstd.sh"
@@ -344,7 +355,7 @@ build {
   }
 
   provisioner "shell" {
-    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}", "DOCKERHUB_LOGIN=${var.dockerhub_login}", "DOCKERHUB_PASSWORD=${var.dockerhub_password}"]
+    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}", "DOCKERHUB_PULL_IMAGES=NO", "DOCKERHUB_LOGIN=${var.dockerhub_login}", "DOCKERHUB_PASSWORD=${var.dockerhub_password}"]
     execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
     scripts          = ["${path.root}/../scripts/build/install-docker.sh"]
   }
@@ -354,7 +365,6 @@ build {
     execute_command  = "sudo sh -c '{{ .Vars }} pwsh -f {{ .Path }}'"
     scripts          = ["${path.root}/../scripts/build/Install-Toolset.ps1", "${path.root}/../scripts/build/Configure-Toolset.ps1"]
   }
-
   
   provisioner "shell" {
     environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
@@ -402,16 +412,6 @@ build {
     environment_vars = ["HELPER_SCRIPT_FOLDER=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}", "IMAGE_FOLDER=${var.image_folder}"]
     execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
     scripts          = ["${path.root}/../scripts/build/configure-system.sh"]
-  }
-
-  provisioner "file" {
-    destination = "/tmp/"
-    source      = "${path.root}/../assets/ubuntu2204.conf"
-  }
-
-  provisioner "shell" {
-    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    inline          = ["mkdir -p /etc/vsts", "cp /tmp/ubuntu2204.conf /etc/vsts/machine_instance.conf"]
   }
 
   provisioner "shell" {

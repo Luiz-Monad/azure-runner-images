@@ -2,10 +2,18 @@ name: Trigger Ubuntu24.04 CI
 run-name: Ubuntu24.04 - ${{ github.event.pull_request.title }}
 
 on:
-  pull_request_target:
-    types: labeled
-    paths:
-    - 'images/ubuntu/**'
+
+  push:
+    branches: 
+    - main
+    paths-ignore:
+    - 'docs/**'
+    - '.vscode'
+    - 'images/linux/Ubuntu2404-Readme.md'
+    - 'images/macos/**'
+    - 'images/win/**'
+    - 'images.CI/linux-and-win/azure-pipelines/windows*'
+    - 'images.CI/macos/**'
 
 defaults:
   run:
@@ -13,8 +21,11 @@ defaults:
 
 jobs:
   Ubuntu_2404:
-    if: github.event.label.name == 'CI ubuntu-all' || github.event.label.name == 'CI ubuntu-2404'
-    uses: ./.github/workflows/trigger-ubuntu-win-build.yml
+    uses: ./.github/workflows/ubuntu-win-generation.yml
     with:
-      image_type: 'ubuntu2404'
+      image_name: 'linux-?buntu'
+      image_version: '24.4.0'
+      image_type: 'ubuntu'
+      image_readme_name: 'Ubuntu2404-Readme.md'
+      image_template_name: 'ubuntu-24.04.pkr.hcl'
     secrets: inherit
