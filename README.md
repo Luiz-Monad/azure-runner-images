@@ -1,44 +1,53 @@
 # Steps to Set up
 
-Run this on Azure shel.
+Run this on Azure shell.
 
 ```pwsh
 
 azps login
 
 $user = Read-Host
+$repo = 'azure-runner-images'
 $gallery = Read-Host
+$res_group = 'azure-github-runner'
+
 $id = azps account show --query id -o tsv
 
 azps group create `
    --location westus3 `
-   --name azure-github-runner
+   --name $res_group
 
 azps ad sp create-for-rbac `
-   --name "https://github.com/$user/azure-runner-images" `
+   --name "https://github.com/$user/$repo" `
    --role Contributor `
-   --scopes "/subscriptions/$id/resourceGroups/azure-github-runner"
+   --scopes "/subscriptions/$id/resourceGroups/$res_group"
 
 azps storage account create `
    --name "$($user)_githubrunner" `
-   --resource-group azure-github-runner `
+   --resource-group $res_group `
    --location westus3 `
    --sku Standard_LRS
 
 $rbac = azps ad sp list `
-   --display-name "https://github.com/$user/azure-runner-images" `
+   --display-name "https://github.com/$user/$repo" `
    --output json | convertfrom-json
 
 azps role assignment create `
    --assignee $rbac.Id `
    --role Contributor `
-   --resource-group azure-github-runner
+   --resource-group $res_group
 
 azps sig create `
-   --resource-group azure-github-runner `
+   --resource-group $res_group `
    --gallery-name $gallery `
    --location westus3
-      
+
+azps sig image-definition create `
+   --resource-group $res_group `
+   --gallery-name $gallery --gallery-image-definition "linux-υbuntu" `
+   --os-type Linux --publisher $gallery --offer $repo --sku "$repo-linux-ubuntu" `
+   --hyper-v-generation V2
+
 ```
 
 Then add the follwing secrets to `github.com/{user}/azure-runner-images/settings/secrets/actions` :
@@ -56,6 +65,8 @@ secrets.BUILD_AGENT_VNET_NAME
 secrets.BUILD_AGENT_SUBNET_NAME
 secrets.BUILD_AGENT_VNET_RESOURCE_GROUP
 ```
+
+
 
 # GitHub Actions Runner Images
 

@@ -70,13 +70,12 @@ jobs:
       arguments: -RepoUrl 'https://github.com/Luiz-Monad/azure-runner-images.git' `
                  -RepoBranch 'main'
 
-  - task: AzureCLI@2
+  # Set variables
+  - task: PowerShell@2
     displayName: 'Set variables'
     inputs:
-      azureSubscription: 'spn-hosted-runners'
-      scriptType: 'pscore'
-      scriptLocation: 'inlineScript'
-      inlineScript: |
+      targetType: 'inline'
+      script: |
         $ImageType = "${{ parameters.image_type }}"
         $TemplateDirectoryName = if ($ImageType.StartsWith("ubuntu")) { "ubuntu/templates" } else { "windows/templates" }
         $TemplateDirectoryPath = Join-Path "images" $TemplateDirectoryName | Resolve-Path
@@ -92,9 +91,6 @@ jobs:
 
         $TempResourceGroupName = "packer-temp-$TempImageName"
         Write-Host "##vso[task.setvariable variable=TempResourceGroupName;]$TempResourceGroupName"
-
-        $clientSecret = $(az keyvault secret show --name "spnhostedrunners" --vault-name "gh-imagegeneration" --query value -o tsv)
-        Write-Host "##vso[task.setvariable variable=ClientSecret;issecret=true]$clientSecret"
 
   # Build VM
   - task: PowerShell@2
@@ -115,7 +111,9 @@ jobs:
                  -TempResourceGroupName "$(TempResourceGroupName)" `
                  -VirtualNetworkRG "$(BUILD_AGENT_VNET_RESOURCE_GROUP)" `
                  -VirtualNetworkName "$(BUILD_AGENT_VNET_NAME)" `
-                 -VirtualNetworkSubnet "$(BUILD_AGENT_SUBNET_NAME)"
+                 -VirtualNetworkSubnet "$(BUILD_AGENT_SUBNET_NAME)" `
+                 -NgrokToken "$(NGROK_TOKEN)" `
+                 -NgrokSSHPubKey "$(NGROK_SSH_PUBKEY)"
 
     env:
       PACKER_LOG: 1
@@ -206,8 +204,8 @@ jobs:
     inputs:
       targetType: filePath
       filePath: ./images.CI/linux-and-win/cleanup.ps1
-      arguments: -TenantId $(AZURE_TENANT) `
-                 -SubscriptionId $(AZURE_SUBSCRIPTION) `
-                 -ClientId $(CLIENT_ID) `
-                 -ClientSecret "$(ClientSecret)" `
+      arguments: -TenantId "$(AZURE_TENANT)" `
+                 -SubscriptionId "$(AZURE_SUBSCRIPTION)" `
+                 -ClientId "$(CLIENT_ID)" `
+                 -ClientSecret "$(CLIENT_SECRET)" `
                  -TempResourceGroupName "$(TempResourceGroupName)"

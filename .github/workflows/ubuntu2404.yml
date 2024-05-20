@@ -1,5 +1,5 @@
-name: Trigger Ubuntu22.04 CI
-run-name: Ubuntu22.04 - ${{ github.event.pull_request.title }}
+name: Trigger Ubuntu24.04 CI
+run-name: Ubuntu24.04 - ${{ github.event.pull_request.title }}
 
 on:
 
@@ -9,7 +9,7 @@ on:
     paths-ignore:
     - 'docs/**'
     - '.vscode'
-    - 'images/linux/Ubuntu2204-Readme.md'
+    - 'images/linux/Ubuntu2404-Readme.md'
     - 'images/macos/**'
     - 'images/win/**'
     - 'images.CI/linux-and-win/azure-pipelines/windows*'
@@ -20,12 +20,12 @@ defaults:
     shell: pwsh
 
 jobs:
-  Ubuntu_2204:
+  Ubuntu_2404:
     uses: ./.github/workflows/ubuntu-win-generation.yml
     with:
       image_name: 'linux-υbuntu'
-      image_version: '22.4.2'
+      image_version: '24.4.0'
       image_type: 'ubuntu'
-      image_readme_name: 'Ubuntu2204-Readme.md'
-      image_template_name: 'ubuntu-22.04.pkr.hcl'
+      image_readme_name: 'Ubuntu2404-Readme.md'
+      image_template_name: 'ubuntu-24.04.pkr.hcl'
     secrets: inherit

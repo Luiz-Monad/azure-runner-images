@@ -136,7 +136,7 @@ jobs:
           }
 
       # Publish artifacts
-      # TODO: not supported on github
+      # TODO: not supported
 
       # Provisioners duration
       - name: Print provisioners duration
@@ -157,7 +157,7 @@ jobs:
             -DefinitionId "${{ secrets.RELEASE_TARGET_DEFINITION_ID }}" `
             -Project "${{ secrets.RELEASE_TARGET_PROJECT }}" `
             -ImageType "${{ inputs.image_type }}" `
-            -ImageName ""${{ inputs.image_name }}"" `
+            -ImageName "${{ inputs.image_name }}" `
             -AccessToken "${{ secrets.RELEASE_TARGET_TOKEN }}"
 
       # Cleanup
