@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/bin/bash
+set -e
 
 NGROK_SSH_PUBKEY=$(echo "$NGROK_SSH_PUBKEY" | base64 -d)
 NGROK_TOKEN=$(echo "$NGROK_TOKEN" | base64 -d)
