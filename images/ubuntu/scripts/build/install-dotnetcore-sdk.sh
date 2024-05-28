@@ -9,6 +9,8 @@ source $HELPER_SCRIPTS/etc-environment.sh
 source $HELPER_SCRIPTS/install.sh
 source $HELPER_SCRIPTS/os.sh
 
+export DOTNET_INSTALL_DIR=/usr/share/dotnet
+
 extract_dotnet_sdk() {
     local archive_name=$1
 
@@ -23,40 +25,21 @@ extract_dotnet_sdk() {
     rm -rf "$destination" "$archive_name"
 }
 
-# Ubuntu 20 doesn't support EOL versions
-latest_dotnet_packages=$(get_toolset_value '.dotnet.aptPackages[]')
 dotnet_versions=$(get_toolset_value '.dotnet.versions[]')
 dotnet_tools=$(get_toolset_value '.dotnet.tools[].name')
 
 # Disable telemetry
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
-# Install .NET SDK from apt
-# There is a versions conflict, that leads to
-# Microsoft <-> Canonical repos dependencies mix up.
-# Give Microsoft's repo higher priority to avoid collisions.
-# See: https://github.com/dotnet/core/issues/7699
-cat << EOF > /etc/apt/preferences.d/dotnet
-Package: *net*
-Pin: origin packages.microsoft.com
-Pin-Priority: 1001
-EOF
+# Install .NET SDK from its script
+wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+chmod +x ./dotnet-install.sh
+sed 's/printf -- "-n";/printf -- "--update=none";/' -i dotnet-install.sh
 
-apt-get update
-
-for latest_package in ${latest_dotnet_packages[@]}; do
-    echo "Determining if .NET Core ($latest_package) is installed"
-    if ! dpkg -S $latest_package &> /dev/null; then
-        echo "Could not find .NET Core ($latest_package), installing..."
-        apt-get install $latest_package
-    else
-        echo ".NET Core ($latest_package) is already installed"
-    fi
+for version in ${dotnet_versions[@]}; do
+    echo "Determining if .NET Core ($version) is installed"
+    ./dotnet-install.sh -c $version -v latest
 done
-
-rm /etc/apt/preferences.d/dotnet
-
-apt-get update
 
 # Install .NET SDK from home repository
 # Get list of all released SDKs from channels which are not end-of-life or preview
@@ -82,19 +65,20 @@ parallel --jobs 0 --halt soon,fail=1 \
     'url="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/{}/dotnet-sdk-{}-linux-x64.tar.gz"; \
     download_with_retry $url' ::: "${sorted_sdks[@]}"
 
-find . -name "*.tar.gz" | parallel --halt soon,fail=1 'extract_dotnet_sdk {}'
+find /tmp/ -name "dotnet-sdk-*.tar.gz" | parallel --halt soon,fail=1 'extract_dotnet_sdk {}'
 
 # NuGetFallbackFolder at /usr/share/dotnet/sdk/NuGetFallbackFolder is warmed up by smoke test
 # Additional FTE will just copy to ~/.dotnet/NuGet which provides no benefit on a fungible machine
 set_etc_environment_variable DOTNET_SKIP_FIRST_TIME_EXPERIENCE 1
 set_etc_environment_variable DOTNET_NOLOGO 1
 set_etc_environment_variable DOTNET_MULTILEVEL_LOOKUP 0
-prepend_etc_environment_path '$HOME/.dotnet/tools'
+prepend_etc_environment_path "$DOTNET_INSTALL_DIR"
+prepend_etc_environment_path "$DOTNET_INSTALL_DIR/tools"
 
 # Install .Net tools
 for dotnet_tool in ${dotnet_tools[@]}; do
     echo "Installing dotnet tool $dotnet_tool"
-    dotnet tool install $dotnet_tool --tool-path '/etc/skel/.dotnet/tools'
+    $DOTNET_INSTALL_DIR/dotnet tool install $dotnet_tool --tool-path "$DOTNET_INSTALL_DIR/tools"
 done
 
 invoke_tests "DotnetSDK"
