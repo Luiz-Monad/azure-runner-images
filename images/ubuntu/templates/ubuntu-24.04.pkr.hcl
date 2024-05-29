@@ -172,7 +172,7 @@ source "azure-arm" "build_image" {
   // Base image
   image_offer                            = "ubuntu-24_04-lts"
   image_publisher                        = "canonical"
-  image_sku                              = "server-gen1"
+  image_sku                              = "server"
   image_version                          = "latest"
 
   // Target location
