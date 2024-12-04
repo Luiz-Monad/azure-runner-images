@@ -36,7 +36,6 @@ if (-not (Test-Path $TemplatePath))
 $InstallPassword = [System.GUID]::NewGuid().ToString().ToUpper()
 
 $SensitiveData = @(
-    'OSType',
     'StorageAccountLocation',
     'OSDiskUri',
     'OSDiskUriReadOnlySas',

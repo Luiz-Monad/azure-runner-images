@@ -151,7 +151,7 @@ variable "virtual_network_subnet_name" {
 
 variable "vm_size" {
   type    = string
-  default = "Standard_D4s_v4"
+  default = "Standard_D4as_v4"
 }
 
 variable "storage_type" {
@@ -173,7 +173,7 @@ source "azure-arm" "build_image" {
   image_offer                            = "ubuntu-24_04-lts"
   image_publisher                        = "canonical"
   image_sku                              = "server"
-  image_version                          = "latest"
+  image_version                          = "24.04.202411030"
 
   // Target location
   shared_image_gallery_destination {

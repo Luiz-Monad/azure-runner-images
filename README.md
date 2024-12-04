@@ -10,23 +10,23 @@ $user = Read-Host
 $repo = 'azure-runner-images'
 $gallery = Read-Host
 $res_group = 'azure-github-runner'
+$location = 'eastus2'
 
-$id = azps account show --query id -o tsv
+$account = azps account show `
+   --output json | convertfrom-json
 
-azps group create `
-   --location westus3 `
-   --name $res_group
+$id = $account.id
 
-azps ad sp create-for-rbac `
+$group = azps group create `
+   --location $location `
+   --name $res_group `
+   --output json | convertfrom-json
+
+$sp = azps ad sp create-for-rbac `
    --name "https://github.com/$user/$repo" `
    --role Contributor `
-   --scopes "/subscriptions/$id/resourceGroups/$res_group"
-
-azps storage account create `
-   --name "$($user)_githubrunner" `
-   --resource-group $res_group `
-   --location westus3 `
-   --sku Standard_LRS
+   --scopes "/subscriptions/$id" `
+   --output json | convertfrom-json
 
 $rbac = azps ad sp list `
    --display-name "https://github.com/$user/$repo" `
@@ -35,37 +35,49 @@ $rbac = azps ad sp list `
 azps role assignment create `
    --assignee $rbac.Id `
    --role Contributor `
-   --resource-group $res_group
+   --scope $group.id
+
+azps role assignment create `
+   --assignee $rbac.Id `
+   --role Contributor `
+   --scope $account.id
 
 azps sig create `
    --resource-group $res_group `
    --gallery-name $gallery `
-   --location westus3
+   --location $location
 
 azps sig image-definition create `
    --resource-group $res_group `
    --gallery-name $gallery --gallery-image-definition "linux-υbuntu" `
-   --os-type Linux --publisher $gallery --offer $repo --sku "$repo-linux-ubuntu" `
+   --os-type Linux --os-state Generalized `
+   --publisher $gallery --offer $repo --sku "$repo-linux-ubuntu" `
    --hyper-v-generation V2
 
-```
+# Then add the follwing secrets to `github.com/{user}/azure-runner-images/settings/secrets/actions` :
 
-Then add the follwing secrets to `github.com/{user}/azure-runner-images/settings/secrets/actions` :
+$secrets = @{
+    "CLIENT_ID" = $sp.appId
+    "CLIENT_SECRET" = $sp.password
+    "AZURE_LOCATION" = $location
+    "AZURE_RESOURCE_GROUP" = $res_group
+    "AZURE_SUBSCRIPTION" = $id
+    "AZURE_TENANT" = $sp.tenant
+    "AZURE_SHARED_GALLERY" = $gallery
+    "BUILD_AGENT_VNET_NAME" = $null
+    "BUILD_AGENT_SUBNET_NAME" = $null
+    "BUILD_AGENT_VNET_RESOURCE_GROUP" = $null
+}
+
+foreach ($secret in $secrets.GetEnumerator()) {
+   if ($secret.Value) {
+      gh secret set $secret.Key --body "$($secret.Value)" -R "$user/$repo"
+   } else {
+      gh secret delete $secret.Key
+   }
+}
 
 ```
-secrets.CLIENT_ID
-secrets.CLIENT_SECRET
-secrets.AZURE_LOCATION
-secrets.AZURE_RESOURCE_GROUP
-secrets.AZURE_STORAGE_ACCOUNT
-secrets.AZURE_SUBSCRIPTION
-secrets.AZURE_TENANT
-secrets.AZURE_SHARED_GALLERY
-secrets.BUILD_AGENT_VNET_NAME
-secrets.BUILD_AGENT_SUBNET_NAME
-secrets.BUILD_AGENT_VNET_RESOURCE_GROUP
-```
-
 
 
 # GitHub Actions Runner Images
