@@ -10,23 +10,23 @@ $user = Read-Host
 $repo = 'azure-runner-images'
 $gallery = Read-Host
 $res_group = 'azure-github-runner'
+$location = 'eastus2'
 
-$id = azps account show --query id -o tsv
+$account = azps account show `
+   --output json | convertfrom-json
 
-azps group create `
-   --location westus3 `
-   --name $res_group
+$id = $account.id
 
-azps ad sp create-for-rbac `
+$group = azps group create `
+   --location $location `
+   --name $res_group `
+   --output json | convertfrom-json
+
+$sp = azps ad sp create-for-rbac `
    --name "https://github.com/$user/$repo" `
    --role Contributor `
-   --scopes "/subscriptions/$id/resourceGroups/$res_group"
-
-azps storage account create `
-   --name "$($user)_githubrunner" `
-   --resource-group $res_group `
-   --location westus3 `
-   --sku Standard_LRS
+   --scopes "/subscriptions/$id" `
+   --output json | convertfrom-json
 
 $rbac = azps ad sp list `
    --display-name "https://github.com/$user/$repo" `
@@ -35,37 +35,49 @@ $rbac = azps ad sp list `
 azps role assignment create `
    --assignee $rbac.Id `
    --role Contributor `
-   --resource-group $res_group
+   --scope $group.id
+
+azps role assignment create `
+   --assignee $rbac.Id `
+   --role Contributor `
+   --scope $account.id
 
 azps sig create `
    --resource-group $res_group `
    --gallery-name $gallery `
-   --location westus3
+   --location $location
 
 azps sig image-definition create `
    --resource-group $res_group `
    --gallery-name $gallery --gallery-image-definition "linux-υbuntu" `
-   --os-type Linux --publisher $gallery --offer $repo --sku "$repo-linux-ubuntu" `
+   --os-type Linux --os-state Generalized `
+   --publisher $gallery --offer $repo --sku "$repo-linux-ubuntu" `
    --hyper-v-generation V2
 
-```
+# Then add the follwing secrets to `github.com/{user}/azure-runner-images/settings/secrets/actions` :
 
-Then add the follwing secrets to `github.com/{user}/azure-runner-images/settings/secrets/actions` :
+$secrets = @{
+    "CLIENT_ID" = $sp.appId
+    "CLIENT_SECRET" = $sp.password
+    "AZURE_LOCATION" = $location
+    "AZURE_RESOURCE_GROUP" = $res_group
+    "AZURE_SUBSCRIPTION" = $id
+    "AZURE_TENANT" = $sp.tenant
+    "AZURE_SHARED_GALLERY" = $gallery
+    "BUILD_AGENT_VNET_NAME" = $null
+    "BUILD_AGENT_SUBNET_NAME" = $null
+    "BUILD_AGENT_VNET_RESOURCE_GROUP" = $null
+}
+
+foreach ($secret in $secrets.GetEnumerator()) {
+   if ($secret.Value) {
+      gh secret set $secret.Key --body "$($secret.Value)" -R "$user/$repo"
+   } else {
+      gh secret delete $secret.Key
+   }
+}
 
 ```
-secrets.CLIENT_ID
-secrets.CLIENT_SECRET
-secrets.AZURE_LOCATION
-secrets.AZURE_RESOURCE_GROUP
-secrets.AZURE_STORAGE_ACCOUNT
-secrets.AZURE_SUBSCRIPTION
-secrets.AZURE_TENANT
-secrets.AZURE_SHARED_GALLERY
-secrets.BUILD_AGENT_VNET_NAME
-secrets.BUILD_AGENT_SUBNET_NAME
-secrets.BUILD_AGENT_VNET_RESOURCE_GROUP
-```
-
 
 
 # GitHub Actions Runner Images
@@ -88,20 +100,16 @@ To build a VM machine from this repo's source, see the [instructions](docs/creat
 
 ## Available Images
 
-| Image | YAML Label | Included Software | Rollout Status of Latest Image Release |
-| --------------------|---------------------|--------------------|--------------------|
-| Ubuntu 24.04 | `ubuntu-24.04` | [ubuntu-24.04] | ![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fsubir0071%2F385e39188f4280878bada99250e99db7%2Fraw%2Fubuntu24.json) |
-| Ubuntu 22.04 | `ubuntu-latest` or `ubuntu-22.04` | [ubuntu-22.04] | ![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fsubir0071%2F385e39188f4280878bada99250e99db7%2Fraw%2Fubuntu22.json) |
-| Ubuntu 20.04 | `ubuntu-20.04` | [ubuntu-20.04] | ![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fsubir0071%2F385e39188f4280878bada99250e99db7%2Fraw%2Fubuntu20.json) |
-| macOS 15 <sup>beta</sup> | `macos-15-large`| [macOS-15] | ![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fsubir0071%2F385e39188f4280878bada99250e99db7%2Fraw%2Fmacos-15.json) |
-| macOS 15 Arm64 <sup>beta</sup> | `macos-15` or `macos-15-xlarge` | [macOS-15-arm64] | ![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fsubir0071%2F385e39188f4280878bada99250e99db7%2Fraw%2Fmacos-15-arm64.json) |
-| macOS 14 | `macos-latest-large` or `macos-14-large`| [macOS-14] | ![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fsubir0071%2F385e39188f4280878bada99250e99db7%2Fraw%2Fmacos-14.json) |
-| macOS 14 Arm64 |`macos-latest`, `macos-14`, `macos-latest-xlarge` or `macos-14-xlarge`| [macOS-14-arm64] | ![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fsubir0071%2F385e39188f4280878bada99250e99db7%2Fraw%2Fmacos-14-arm64.json) |
-| macOS 13 | `macos-13` or `macos-13-large` | [macOS-13] | ![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fsubir0071%2F385e39188f4280878bada99250e99db7%2Fraw%2Fmacos-13.json) |
-| macOS 13 Arm64 | `macos-13-xlarge` | [macOS-13-arm64] | ![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fsubir0071%2F385e39188f4280878bada99250e99db7%2Fraw%2Fmacos-13-arm64.json) |
-| macOS 12 <sup>deprecated</sup> | `macos-12` or `macos-12-large`| [macOS-12] | ![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fsubir0071%2F385e39188f4280878bada99250e99db7%2Fraw%2Fmacos-12.json) |
-| Windows Server 2022 | `windows-latest` or `windows-2022` | [windows-2022] | ![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fsubir0071%2F385e39188f4280878bada99250e99db7%2Fraw%2Fwin22.json) |
-| Windows Server 2019 | `windows-2019` | [windows-2019] | ![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fsubir0071%2F385e39188f4280878bada99250e99db7%2Fraw%2Fwin19.json) |
+| Image               | YAML Label     | Included Software | Rollout Status of Latest Image Release                                                                                                                                                                                |
+| --------------------|----------------|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Ubuntu 24.04        | `ubuntu-24.04` | [ubuntu-24.04]    | [![Trigger Ubuntu24.04 CI  ](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/ubuntu2404.yml/badge.svg)](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/ubuntu2404.yml)       |
+| Ubuntu 22.04        | `ubuntu-22.04` | [ubuntu-22.04]    | [![Trigger Ubuntu22.04 CI  ](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/ubuntu2204.yml/badge.svg)](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/ubuntu2204.yml)       |
+| macOS 15            | `macos-15`     | [macOS-15]        | [![Trigger MacOS15 CI      ](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/macos15.yml/badge.svg)](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/macos15.yml)             |
+| macOS 15 Arm64      | `macos-15-arm` | [macOS-15-arm64]  | [![Trigger MacOS15-arm64 CI](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/macos15-arm64.yml/badge.svg)](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/macos15-arm64.yml) |
+| macOS 14            | `macos-14`     | [macOS-14]        | [![Trigger MacOS14 CI      ](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/macos14.yml/badge.svg)](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/macos14.yml)             |
+| macOS 14 Arm64      | `macos-14-arm` | [macOS-14-arm64]  | [![Trigger MacOS14-arm64 CI](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/macos14-arm64.yml/badge.svg)](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/macos14-arm64.yml) |
+| Windows Server 2022 | `windows-2022` | [windows-2022]    | [![Trigger Windows2022 CI  ](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/windows2022.yml/badge.svg)](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/windows2022.yml)     |
+| Windows Server 2019 | `windows-2019` | [windows-2019]    | [![Trigger Windows2019 CI  ](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/windows2019.yml/badge.svg)](https://github.com/Luiz-Monad/azure-runner-images/actions/workflows/windows2019.yml)     |
 
 ### Label scheme
 
@@ -110,12 +118,8 @@ To build a VM machine from this repo's source, see the [instructions](docs/creat
 
 [ubuntu-24.04]: https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
 [ubuntu-22.04]: https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md
-[ubuntu-20.04]: https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2004-Readme.md
 [windows-2022]: https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md
 [windows-2019]: https://github.com/actions/runner-images/blob/main/images/windows/Windows2019-Readme.md
-[macOS-12]: https://github.com/actions/runner-images/blob/main/images/macos/macos-12-Readme.md
-[macOS-13]: https://github.com/actions/runner-images/blob/main/images/macos/macos-13-Readme.md
-[macOS-13-arm64]: https://github.com/actions/runner-images/blob/main/images/macos/macos-13-arm64-Readme.md
 [macOS-14]: https://github.com/actions/runner-images/blob/main/images/macos/macos-14-Readme.md
 [macOS-14-arm64]: https://github.com/actions/runner-images/blob/main/images/macos/macos-14-arm64-Readme.md
 [macOS-15]: https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md

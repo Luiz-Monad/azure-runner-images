@@ -37,7 +37,6 @@ if (-not (Test-Path $TemplatePath))
 $InstallPassword = [System.GUID]::NewGuid().ToString().ToUpper()
 
 $SensitiveData = @(
-    'OSType',
     'StorageAccountLocation',
     'OSDiskUri',
     'OSDiskUriReadOnlySas',
@@ -70,11 +69,11 @@ packer build `
             -var "virtual_network_resource_group_name=$VirtualNetworkRG" `
             -var "virtual_network_name=$VirtualNetworkName" `
             -var "virtual_network_subnet_name=$VirtualNetworkSubnet" `
-             var "allowed_inbound_ip_addresses=$($AllowedInboundIpAddresses)" `
+            -var "allowed_inbound_ip_addresses=$($AllowedInboundIpAddresses)" `
             -var "install_password=$InstallPassword" `
             -var "ngrok_token=$($NgrokToken | ConvertTo-Base64)" `
             -var "ngrok_ssh_pubkey=$($NgrokSSHPubKey | ConvertTo-Base64)" `
-            --color=false `
+            -color=false `
             $TemplatePath `
     | Where-Object {
         #Filter sensitive data from Packer logs
