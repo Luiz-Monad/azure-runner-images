@@ -1,25 +1,19 @@
-| Announcements |
-|-|
-| [[Ubuntu] Breaking Change: runner user will have UID 1001 instead of 1000 for larger runners](https://github.com/actions/runner-images/issues/10936) |
-| [Ubuntu-latest workflows will use Ubuntu-24.04 image](https://github.com/actions/runner-images/issues/10636) |
-***
-# Ubuntu 24.04
+# Ubuntu24.04
 - OS Version: 24.04.1 LTS
 - Kernel Version: 6.8.0-1017-azure
-- Image Version: 20241201.1.0
+- Image Version: 24.4.0
 - Systemd version: 255.4-1ubuntu8.4
 
 ## Installed Software
 
 ### Language and Runtime
 - Bash 5.2.21(1)-release
-- Clang: 16.0.6, 17.0.6, 18.1.3
-- Clang-format: 16.0.6, 17.0.6, 18.1.3
-- Clang-tidy: 16.0.6, 17.0.6, 18.1.3
+- Clang: 18.1.8, 19.1.5, 20.0.0
+- Clang-format: 18.1.8, 19.1.5, 20.0.0
+- Clang-tidy: 18.1.8, 19.1.5, 20.0.0
 - Dash 0.5.12-6ubuntu5
-- GNU C++: 12.3.0, 13.2.0, 14.2.0
-- GNU Fortran: 12.3.0, 13.2.0, 14.2.0
-- Julia 1.11.1
+- GNU C++: 13.2.0
+- Julia 1.11.2
 - Kotlin 2.1.0-release-394
 - Node.js 20.18.1
 - Perl 5.38.2
@@ -30,14 +24,13 @@
 ### Package Management
 - cpan 1.64
 - Helm 3.16.3
-- Homebrew 4.4.8
 - Miniconda 24.9.2
 - Npm 10.8.2
 - Pip 24.0
 - Pip3 24.0
 - Pipx 1.7.1
 - RubyGems 3.4.20
-- Vcpkg (build from commit cd124b84f)
+- Vcpkg (build from commit 20a72ce99)
 - Yarn 1.22.22
 
 #### Environment variables
@@ -61,17 +54,15 @@ to accomplish this.
 - Maven 3.8.8
 
 ### Tools
-- Ansible 2.18.0
 - AzCopy 10.27.1 - available by `azcopy` and `azcopy10` aliases
 - Bazel 7.4.1
 - Bazelisk 1.24.1
 - Bicep 0.31.92
 - Buildah 1.33.7
-- CMake 3.31.1
-- CodeQL Action Bundle 2.19.3
+- CMake 3.31.2
 - Docker Amazon ECR Credential Helper 0.9.0
 - Docker Compose v2 2.27.1
-- Docker-Buildx 0.19.1
+- Docker-Buildx 0.19.2
 - Docker Client 26.1.3
 - Docker Server 26.1.3
 - Fastlane 2.225.0
@@ -93,43 +84,30 @@ to accomplish this.
 - Packer 1.11.2
 - Parcel 2.13.2
 - Podman 4.9.3
-- Pulumi 3.142.0
 - Skopeo 1.13.3
 - Sphinx Open Source Search Server 2.2.11
 - yamllint 1.35.1
-- yq 4.44.5
+- yq 4.44.6
 - zstd 1.5.6
 
 ### CLI Tools
-- AWS CLI 2.22.7
-- AWS CLI Session Manager Plugin 1.2.694.0
-- AWS SAM CLI 1.131.0
+- AWS CLI bin
+- AWS CLI Session Manager Plugin /usr/bin/bash: line 1: session-manager-plugin: command not found
 - Azure CLI 2.67.0
 - Azure CLI (azure-devops) 1.0.1
-- GitHub CLI 2.63.0
-- Google Cloud CLI 502.0.0
+- GitHub CLI 2.63.2
 
 ### Java
-| Version              | Environment Variable |
-| -------------------- | -------------------- |
-| 8.0.432+6            | JAVA_HOME_8_X64      |
-| 11.0.25+9            | JAVA_HOME_11_X64     |
-| 17.0.13+11 (default) | JAVA_HOME_17_X64     |
-| 21.0.5+11            | JAVA_HOME_21_X64     |
+| Version             | Environment Variable |
+| ------------------- | -------------------- |
+| 21.0.5+11 (default) | JAVA_HOME_21_X64     |
 
 ### PHP Tools
-- PHP: 8.3.6
-- Composer 2.8.3
-- PHPUnit 8.5.40
 ```
 Both Xdebug and PCOV extensions are installed, but only Xdebug is enabled.
 ```
 
 ### Haskell Tools
-- Cabal 3.12.1.0
-- GHC 9.10.1
-- GHCup 0.1.30.0
-- Stack 3.1.1
 
 ### Rust Tools
 - Cargo 1.83.0
@@ -138,86 +116,66 @@ Both Xdebug and PCOV extensions are installed, but only Xdebug is enabled.
 - Rustup 1.27.1
 
 #### Packages
+- Cargo audit 0.21.0
+- Cargo clippy 0.1.83
+- Cargo outdated 0.16.0
+- Cbindgen 0.27.0
 - Rustfmt 1.8.0
 
 ### Browsers and Drivers
-- Google Chrome 131.0.6778.85
-- ChromeDriver 131.0.6778.85
-- Chromium 131.0.6778.0
-- Microsoft Edge 131.0.2903.70
-- Microsoft Edge WebDriver 131.0.2903.52
 - Selenium server 4.27.0
-- Mozilla Firefox 133.0
-- Geckodriver 0.35.0
 
 #### Environment variables
-| Name              | Value                                 |
-| ----------------- | ------------------------------------- |
-| CHROMEWEBDRIVER   | /usr/local/share/chromedriver-linux64 |
-| EDGEWEBDRIVER     | /usr/local/share/edge_driver          |
-| GECKOWEBDRIVER    | /usr/local/share/gecko_driver         |
-| SELENIUM_JAR_PATH | /usr/share/java/selenium-server.jar   |
+| Name              | Value                               |
+| ----------------- | ----------------------------------- |
+| CHROMEWEBDRIVER   |                                     |
+| EDGEWEBDRIVER     |                                     |
+| GECKOWEBDRIVER    |                                     |
+| SELENIUM_JAR_PATH | /usr/share/java/selenium-server.jar |
 
 ### .NET Tools
-- .NET Core SDK: 8.0.110
+- .NET Core SDK: 8.0.111, 8.0.206, 8.0.307, 8.0.404
 - nbgv 3.6.146+392592327a
 
 ### Databases
 - sqlite3 3.45.1
 
-#### PostgreSQL
-- PostgreSQL 16.6
-```
-User: postgres
-PostgreSQL service is disabled by default.
-Use the following command as a part of your job to start the service: 'sudo systemctl start postgresql.service'
-```
-
-#### MySQL
-- MySQL 8.0.40-0ubuntu0.24.04.1
-```
-User: root
-Password: root
-MySQL service is disabled by default.
-Use the following command as a part of your job to start the service: 'sudo systemctl start mysql.service'
-```
-
 ### Cached Tools
 
 #### Go
 - 1.21.13
-- 1.22.9
-- 1.23.3
+- 1.22.10
+- 1.23.4
 
 #### Node.js
 - 18.20.5
 - 20.18.1
-- 22.11.0
+- 22.12.0
 
 #### Python
 - 3.9.20
 - 3.10.15
-- 3.11.10
-- 3.12.7
+- 3.11.11
+- 3.12.8
 
 #### PyPy
 - 3.9.19 [PyPy 7.3.16]
 - 3.10.14 [PyPy 7.3.17]
+
+#### Ruby
+- 3.3.6
+- 3.4.0
 
 ### PowerShell Tools
 - PowerShell 7.4.6
 
 #### PowerShell Modules
 - Az: 12.1.0
-- Microsoft.Graph: 2.25.0
+- MarkdownPS: 1.10
 - Pester: 5.6.1
 - PSScriptAnalyzer: 1.23.0
 
 ### Web Servers
-| Name    | Version | ConfigFile                | ServiceStatus | ListenPort |
-| ------- | ------- | ------------------------- | ------------- | ---------- |
-| apache2 | 2.4.58  | /etc/apache2/apache2.conf | inactive      | 80         |
-| nginx   | 1.24.0  | /etc/nginx/nginx.conf     | inactive      | 80         |
 
 ### Android
 | Package Name               | Version                                                                                                                                                                                                                                   |
@@ -226,6 +184,7 @@ Use the following command as a part of your job to start the service: 'sudo syst
 | Android SDK Build-tools    | 35.0.0<br>34.0.0                                                                                                                                                                                                                          |
 | Android SDK Platforms      | android-35-ext14 (rev 1)<br>android-35 (rev 1)<br>android-34-ext8 (rev 1)<br>android-34-ext12 (rev 1)<br>android-34-ext11 (rev 1)<br>android-34-ext10 (rev 1)<br>android-34 (rev 3)<br>android-33-ext5 (rev 1)<br>android-33-ext4 (rev 1) |
 | Android Support Repository | 47.0.0                                                                                                                                                                                                                                    |
+| CMake                      | 3.10.2<br>3.18.1<br>3.22.1                                                                                                                                                                                                                |
 | Google Play services       | 49                                                                                                                                                                                                                                        |
 | Google Repository          | 58                                                                                                                                                                                                                                        |
 | NDK                        | 26.3.11579264<br>27.2.12479018 (default)                                                                                                                                                                                                  |
@@ -239,6 +198,8 @@ Use the following command as a part of your job to start the service: 'sudo syst
 | ANDROID_NDK_LATEST_HOME | /usr/local/lib/android/sdk/ndk/27.2.12479018 |
 | ANDROID_NDK_ROOT        | /usr/local/lib/android/sdk/ndk/27.2.12479018 |
 | ANDROID_SDK_ROOT        | /usr/local/lib/android/sdk                   |
+
+### Cached Docker images
 
 ### Installed apt packages
 | Name                   | Version                     |
@@ -311,6 +272,5 @@ Use the following command as a part of your job to start the service: 'sudo syst
 | wget                   | 1.21.4-1ubuntu4.1           |
 | xvfb                   | 2:21.1.12-1ubuntu1.1        |
 | xz-utils               | 5.6.1+really5.4.5-1build0.1 |
-| zip                    | 3.0-13build1                |
+| zip                    | 3.0-13ubuntu0.1             |
 | zsync                  | 0.6.2-5build1               |
-
