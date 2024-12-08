@@ -239,11 +239,11 @@
     },
     "clang": {
         "versions": [
-            "17",
             "18",
-            "19"
+            "19",
+            "20"
         ],
-        "default_version": "19"
+        "default_version": "20"
     },
     "gcc": {
         "versions": [
